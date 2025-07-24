@@ -10,24 +10,7 @@
 //     await opcua.subscribe("ns=1;s=overall_time");
 // })();
 
-const { OPCUAClient } = require("node-opcua");
-
-const discoveryUrl = "opc.tcp://localhost:4840"; // Update as needed
-
-async function discoverServersOnNetwork() {
-    const client = OPCUAClient.create();
-
-    try {
-        await client.connect(discoveryUrl);
-
-        const servers = await client.findServers();
-        console.log("Raw servers result:", servers);
-    } catch (err) {
-        console.error("Error:", err.message);
-    } finally {
-        await client.disconnect();
-    }
-}
-
-discoverServersOnNetwork();
+const my_module = require('./my-addons/my_module.node');
+console.log(my_module.findServers("opc.tcp://localhost:4840"));
+module.exports = my_module;
 
