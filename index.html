@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPS Kitchen Dashboard</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <h1 class="open-sans-myfont banner" id="banner">CPS-Kitchen</h1>
+    <div class="grid-container page-content">
+        <div class="card" id="robots">
+            <h2 class="open-sans-myfont">Robots</h2>
+        </div>
+        <div class="card" id="gauges">
+            <h2 class="open-sans-myfont">Robots Overall Time</h2>
+        </div>
+        <div class="card" id="plates">
+            <h2 class="open-sans-myfont" id="conveyor">Conveyor</h2>
+        </div>
+    </div>
+
+
+    <!-- Load js script -->
+    <!-- Raphael must be included before justgage -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.4/raphael-min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/justgage/1.2.9/justgage.min.js"></script>
+    <script src="./frontend.js"></script>
+    <!-- Use '<script src="./app2.js"></script>' to add more scripts -->
+    <!-- Use full url to link a script: '<script src="https://www.w3schools.com/js/myScript.js"></script>' -->
+</body>
+</html>
