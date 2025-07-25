@@ -1,10 +1,8 @@
 const { OPCUAClient,
-        AttributeIds,
         resolveNodeId,
         NodeClass,
         ResultMask,
         BrowseDirection,
-        ApplicationType, 
         NodeId}
     = require("node-opcua");
 
