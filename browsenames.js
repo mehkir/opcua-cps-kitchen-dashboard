@@ -6,7 +6,7 @@ const Robot = {
     RECEIVE_TASK : "ReceiveTask",
     HANDOVER_FINISHED_ORDER : "HandoverFinishedOrder",
     // information nodes
-    AGENT_TYPE : "AgentType",
+    POSITION : "Position",
     RECIPE_ID : "RecipeId",
     DISH_NAME : "DishName",
     ACTION_NAME : "ActionName",
