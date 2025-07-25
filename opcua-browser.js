@@ -45,7 +45,8 @@ class opcua_browser {
             referenceTypeId: resolveNodeId("Organizes"),
             browseDirection: BrowseDirection.Forward,
             includeSubtypes: true,
-            nodeClassMask: NodeClass.Object
+            nodeClassMask: NodeClass.Object,
+            resultMask: 63 // All
         });
         // Close session and disconnect
         await session.close();
@@ -63,7 +64,8 @@ class opcua_browser {
             referenceTypeId: resolveNodeId("HasComponent"),
             browseDirection: BrowseDirection.Forward,
             includeSubtypes: true,
-            nodeClassMask: NodeClass.Method
+            nodeClassMask: NodeClass.Method,
+            resultMask: 63 // All
         });
         // Close session and disconnect
         await session.close();
@@ -81,7 +83,8 @@ class opcua_browser {
             referenceTypeId: resolveNodeId("HasComponent"),
             browseDirection: BrowseDirection.Forward,
             includeSubtypes: true,
-            nodeClassMask: NodeClass.Variable
+            nodeClassMask: NodeClass.Variable,
+            resultMask: 63 // All
         });
         // Close session and disconnect
         await session.close();
