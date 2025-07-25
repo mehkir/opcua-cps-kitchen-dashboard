@@ -96,3 +96,14 @@ class OPCUA_Subscriber {
         }
     }
 }
+module.exports = OPCUA_Subscriber;
+// Example usage
+// const WebSocket = require('ws');
+// const wss = new WebSocket.Server({ port: 8080 });
+// const OPCUA_Subscriber = require('./opcua-subscription.js');
+// (async () => {
+//     const opcua = new OPCUA_Subscriber(wss, "opc.tcp://localhost:4000");
+//     await opcua.create_session();
+//     await opcua.create_subscription();
+//     await opcua.subscribe("ns=1;s=overall_time");
+// })();
