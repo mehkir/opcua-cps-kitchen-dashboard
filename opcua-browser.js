@@ -35,14 +35,14 @@ class opcua_browser {
         return matching_node_id;
     }
 
-    async browse_objects(_server_url) {
+    async browse_objects(_server_url, _start_node_id = resolveNodeId("ObjectsFolder"), _reference_type_id = resolveNodeId("Organizes")) {
         const client = OPCUAClient.create({});
         await client.connect(_server_url);
         const session = await client.createSession();
         // Browse the objects folder
         const browse_result = await session.browse({
-            nodeId: resolveNodeId("ObjectsFolder"),
-            referenceTypeId: resolveNodeId("Organizes"),
+            nodeId: _start_node_id,
+            referenceTypeId: _reference_type_id,
             browseDirection: BrowseDirection.Forward,
             includeSubtypes: true,
             nodeClassMask: NodeClass.Object,
@@ -90,6 +90,39 @@ class opcua_browser {
         await session.close();
         await client.disconnect();
         return browse_result;
+    }
+    
+    async browse_instance(_server_url, _object_type) {
+        const object_type_id = await this.browse_object_type(_server_url, _object_type);
+        if (object_type_id === NodeId.nullNodeId) {
+            return NodeId.nullNodeId;
+        }
+        const browse_result = await this.browse_objects(_server_url);
+        for (const ref of browse_result.references) {
+            if (ref.typeDefinition.toString() === object_type_id.toString()) {
+                return ref.nodeId;
+            }
+        }
+        return NodeId.nullNodeId;
+    }
+
+    async has_object_type(_server_url, _object_type) {
+        const node_id = await this.browse_object_type(_server_url, _object_type);
+        return node_id !== NodeId.nullNodeId;
+    }
+
+    async has_instance(_server_url, _object_type) {
+        const object_type_id = await this.browse_object_type(_server_url, _object_type);
+        if (object_type_id === NodeId.nullNodeId) {
+            return false;
+        }
+        const browse_result = await this.browse_objects(_server_url);
+        for (const ref of browse_result.references) {
+            if (ref.typeDefinition.toString() === object_type_id.toString()) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 module.exports = opcua_browser;
