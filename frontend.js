@@ -18,13 +18,12 @@ function create_robot_info_element(pos) {
 }
 
 function update_robot_info_element(pos, data) {
-    const set_if_exists = (id, newValue) => {
+    const set_if_exists = (id, new_value) => {
         const el = document.getElementById(`${id}-${pos}`);
         if (!el) return;
-        if (newValue !== undefined && newValue !== null && newValue !== '') {
-            el.textContent = newValue;
+        if (new_value !== undefined && new_value !== null && new_value !== '') {
+            el.textContent = new_value;
         }
-        // else: keep the current textContent as-is
     };
 
     set_if_exists('recipe', data.recipe);
@@ -57,13 +56,12 @@ function create_plate_info_element(pos) {
 }
 
 function update_plate_info_element(pos, data) {
-    const set_if_exists = (id, newValue) => {
+    const set_if_exists = (id, new_value) => {
         const el = document.getElementById(`plate-${id}-${pos}`);
         if (!el) return;
-        if (newValue !== undefined && newValue !== null && newValue !== '') {
-            el.textContent = newValue;
+        if (new_value !== undefined && new_value !== null && new_value !== '') {
+            el.textContent = new_value;
         }
-        // else: keep the current textContent as-is
     };
 
     set_if_exists('id', data.id);
@@ -72,17 +70,17 @@ function update_plate_info_element(pos, data) {
 }
 
 function handle_received_data(pos, value) {
-    const robotId = `robot-${pos}`;
-    if (!document.getElementById(robotId)) {
-        const newRobot = create_robot_info_element(pos);
+    const robot_id = `robot-${pos}`;
+    if (!document.getElementById(robot_id)) {
+        const new_robot = create_robot_info_element(pos);
         const container = document.getElementById("robots")
-        container.appendChild(newRobot);
+        container.appendChild(new_robot);
     }
-    const gaugeId = `gauge-${pos}`;
-    if (!document.getElementById(gaugeId)) {
-        const newGauge = createGauge(pos);
+    const gauge_id = `gauge-${pos}`;
+    if (!document.getElementById(gauge_id)) {
+        const new_gauge = createGauge(pos);
         const container = document.getElementById("gauges")
-        container.appendChild(newGauge);
+        container.appendChild(new_gauge);
 
         gauges[pos] = new JustGage({
             id: `gauge-${pos}`,
@@ -94,8 +92,8 @@ function handle_received_data(pos, value) {
     } else {
         gauges[pos].refresh(value);
     }
-    const plateId = `plate-${pos}`;
-    if (!document.getElementById(plateId)) {
+    const plate_id = `plate-${pos}`;
+    if (!document.getElementById(plate_id)) {
         const newPlate = create_plate_info_element(pos);
         const container = document.getElementById("plates")
         container.appendChild(newPlate);
@@ -110,10 +108,11 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     ws.onmessage = (event) => {
-        console.log("📨 Received from server:", event.data); // <--- Add this!
+        console.log("📨 Received from server:", event.data);
         const data = JSON.parse(event.data);
-        const value = Number(data.value[1]);
-        console.log("after parsing:", data.value[1]);
-        handle_received_data(1,value);
+        console.log("📨 Parsed data:", data);
+        // const value = Number(data.value[1]);
+        // console.log("after parsing:", data.value[1]);
+        // handle_received_data(1,value);
     };
 });
