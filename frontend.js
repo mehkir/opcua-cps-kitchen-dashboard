@@ -1,6 +1,6 @@
 const gauges = {};
 
-function createRobotInfoElement(pos) {
+function create_robot_info_element(pos) {
   const p = document.createElement('p');
   p.className = 'open-sans-myfont';
   p.id = `robot-${pos}`;
@@ -17,8 +17,8 @@ function createRobotInfoElement(pos) {
   return p;
 }
 
-function updateRobotInfoElement(pos, data) {
-    const setIfExists = (id, newValue) => {
+function update_robot_info_element(pos, data) {
+    const set_if_exists = (id, newValue) => {
         const el = document.getElementById(`${id}-${pos}`);
         if (!el) return;
         if (newValue !== undefined && newValue !== null && newValue !== '') {
@@ -27,11 +27,11 @@ function updateRobotInfoElement(pos, data) {
         // else: keep the current textContent as-is
     };
 
-    setIfExists('recipe', data.recipe);
-    setIfExists('dish', data.dish);
-    setIfExists('tool', data.tool);
-    setIfExists('action', data.action);
-    setIfExists('ingredients', data.ingredients);
+    set_if_exists('recipe', data.recipe);
+    set_if_exists('dish', data.dish);
+    set_if_exists('tool', data.tool);
+    set_if_exists('action', data.action);
+    set_if_exists('ingredients', data.ingredients);
 }
 
 
@@ -41,7 +41,7 @@ function createGauge(pos) {
     return div;
 }
 
-function createPlateInfoElement(pos) {
+function create_plate_info_element(pos) {
     const p = document.createElement('p');
     p.className = 'open-sans-myfont';
     p.id = `plate-${pos}`;
@@ -56,8 +56,8 @@ function createPlateInfoElement(pos) {
     return p;
 }
 
-function updatePlateInfoElement(pos, data) {
-    const setIfExists = (id, newValue) => {
+function update_plate_info_element(pos, data) {
+    const set_if_exists = (id, newValue) => {
         const el = document.getElementById(`plate-${id}-${pos}`);
         if (!el) return;
         if (newValue !== undefined && newValue !== null && newValue !== '') {
@@ -66,15 +66,15 @@ function updatePlateInfoElement(pos, data) {
         // else: keep the current textContent as-is
     };
 
-    setIfExists('id', data.id);
-    setIfExists('recipe', data.recipe);
-    setIfExists('occupied', data.occupied);
+    set_if_exists('id', data.id);
+    set_if_exists('recipe', data.recipe);
+    set_if_exists('occupied', data.occupied);
 }
 
-function handleReceivedData(pos, value) {
+function handle_received_data(pos, value) {
     const robotId = `robot-${pos}`;
     if (!document.getElementById(robotId)) {
-        const newRobot = createRobotInfoElement(pos);
+        const newRobot = create_robot_info_element(pos);
         const container = document.getElementById("robots")
         container.appendChild(newRobot);
     }
@@ -96,7 +96,7 @@ function handleReceivedData(pos, value) {
     }
     const plateId = `plate-${pos}`;
     if (!document.getElementById(plateId)) {
-        const newPlate = createPlateInfoElement(pos);
+        const newPlate = create_plate_info_element(pos);
         const container = document.getElementById("plates")
         container.appendChild(newPlate);
     }
@@ -114,6 +114,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const data = JSON.parse(event.data);
         const value = Number(data.value[1]);
         console.log("after parsing:", data.value[1]);
-        handleReceivedData(1,value);
+        handle_received_data(1,value);
     };
 });
