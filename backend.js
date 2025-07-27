@@ -6,7 +6,7 @@ const { ApplicationType, NodeId, OPCUAClient, resolveNodeId } = require("node-op
 const opcua_browser = require('./opcua-browser.js');
 const opcua_browser_instance = new opcua_browser();
 
-async function readAttributeValue(_server_url, _node_id) {
+async function read_attribute_value(_server_url, _node_id) {
     const client = OPCUAClient.create({});
     await client.connect(_server_url);
     const session = await client.createSession();
@@ -39,9 +39,8 @@ controller.methods = {};
                 console.log(`Robot attribute: ${attr.browseName.name} (${attr.nodeId.toString()})`);
                 robot_server.attributes[attr.browseName.name] = attr.nodeId;
                 if (attr.browseName.name === Robot.POSITION) {
-                    robot_server.position = await readAttributeValue(server.discoveryUrl, attr.nodeId);
+                    robot_server.position = await read_attribute_value(server.discoveryUrl, attr.nodeId);
                 }
-                // console.log(`Value of ${attr.browseName.name}:`, await readAttributeValue(server.discoveryUrl, attr.nodeId));
             }
             robot_server.url = server.discoveryUrl;
             robots.set(robot_server.position, robot_server);
@@ -57,9 +56,8 @@ controller.methods = {};
                 for (const attr of browse_attributes_result.references) {
                     console.log(`Plate attribute: ${attr.browseName.name} (${attr.nodeId.toString()})`);
                     plate_attributes[attr.browseName.name] = attr.nodeId;
-                    // console.log(`Value of ${attr.browseName.name}:`, await readAttributeValue(server.discoveryUrl, attr.nodeId));
                     if (attr.browseName.name === Conveyor.PLATE_POSITION) {
-                        plate_attributes.position = await readAttributeValue(server.discoveryUrl, attr.nodeId);
+                        plate_attributes.position = await read_attribute_value(server.discoveryUrl, attr.nodeId);
                     }
                 }
                 conveyor.plates.set(plate_attributes.position, plate_attributes);
