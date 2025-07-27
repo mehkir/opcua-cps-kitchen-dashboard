@@ -56,7 +56,7 @@ class opcua_subscriber {
         }
     }
 
-    async subscribe(node_id) {
+    async subscribe(node_id, value_dto) {
         try {
             const monitoredItem = await this.#subscription.monitor(
                 {
@@ -75,11 +75,12 @@ class opcua_subscriber {
             monitoredItem.on("changed", (dataValue) => {
                 const value = dataValue.value.value;
                 console.log("🔄 Value changed:", value);
+                value_dto.value = value;
 
                 // Broadcast to all connected clients
                 this.#wss.clients.forEach(function each(client) {
                     if (client.readyState === WebSocket.OPEN) {
-                        client.send(JSON.stringify({ value }));
+                        client.send(JSON.stringify({ value_dto }));
                     }
                 });
             });
