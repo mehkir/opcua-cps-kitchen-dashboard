@@ -8,7 +8,7 @@ const {
 } = require("node-opcua");
 
 
-class OPCUA_Subscriber {
+class opcua_subscriber {
     #wss;
     #endpoint_url;
     #client;
@@ -83,26 +83,35 @@ class OPCUA_Subscriber {
                     }
                 });
             });
-
-            // Keep the client running for a while
-            // setTimeout(async () => {
-            //     await subscription.terminate();
-            //     await session.close();
-            //     await client.disconnect();
-            //     console.log("✅ Disconnected from server");
-            // }, 30000); // Monitor for 30 seconds
         } catch (err) {
             console.error("❌ Error:", err);
         }
     }
+
+    async disconnect() {
+        try {
+            if (this.#subscription) {
+                await this.#subscription.terminate();
+            }
+            if (this.#session) {
+                await this.#session.close();
+            }
+            if (this.#client) {
+                await this.#client.disconnect();
+            }
+            console.log("✅ Disconnected from server");
+        } catch (err) {
+            console.error("❌ Error during disconnect:", err);
+        }
+    }
 }
-module.exports = OPCUA_Subscriber;
+module.exports = opcua_subscriber;
 // Example usage
 // const WebSocket = require('ws');
 // const wss = new WebSocket.Server({ port: 8080 });
-// const OPCUA_Subscriber = require('./opcua-subscription.js');
+// const opcua_subscriber = require('./opcua-subscription.js');
 // (async () => {
-//     const opcua = new OPCUA_Subscriber(wss, "opc.tcp://localhost:4000");
+//     const opcua = new opcua_subscriber(wss, "opc.tcp://localhost:4000");
 //     await opcua.create_session();
 //     await opcua.create_subscription();
 //     await opcua.subscribe("ns=1;s=overall_time");
