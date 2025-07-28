@@ -6,6 +6,7 @@ const {
     MonitoringParametersOptions,
     ReadValueIdOptions
 } = require("node-opcua");
+const { Robot } = require("./browsenames");
 
 
 class opcua_subscriber {
@@ -24,7 +25,7 @@ class opcua_subscriber {
             // Create the client
             this.#client = OPCUAClient.create({ endpointMustExist: false });
             // Connect to OPC UA server
-            await client.connect(this.#endpoint_url); // replace with your server
+            await this.#client.connect(this.#endpoint_url);
             console.log("✅ Connected to OPC UA server");
             // Create session
             this.#session = await this.#client.createSession();
@@ -66,15 +67,30 @@ class opcua_subscriber {
                 {
                     samplingInterval: 0,
                     discardOldest: true,
-                    queueSize: 10
+                    queueSize: 1
                 },
                 TimestampsToReturn.Both
             );
 
             // Handle data change
             monitoredItem.on("changed", (dataValue) => {
-                const value = dataValue.value.value;
-                console.log("🔄 Value changed:", value);
+                let value = dataValue.value.value;
+                // if (Array.isArray(value)) {
+                //     value = value.map(item => item.toString());
+                // }
+
+                if (value_dto.attribute_name === Robot.DISH_NAME || value_dto.attribute_name === Robot.INGREDIENTS) {
+                    console.log(`Raw value for ${value_dto.attribute_name}:`, value);
+                    console.log(`DataType for ${value_dto.attribute_name}:`, dataValue.value.dataType);
+                }
+                // if (Array.isArray(value)) {
+                //     value = value.map(item => Buffer.isBuffer(item) ? item.toString('utf8') : item.toString());
+                // }
+                // if (Buffer.isBuffer(value)) {
+                //     value = value.toString('utf8');
+                // }
+
+                console.log(`🔄 Attribute ${value_dto.attribute_name} changed:`, value);
                 value_dto.value = value;
 
                 // Broadcast to all connected clients
