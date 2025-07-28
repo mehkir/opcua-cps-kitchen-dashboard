@@ -94,15 +94,14 @@ function handle_received_data(pos, value) {
     }
     const plate_id = `plate-${pos}`;
     if (!document.getElementById(plate_id)) {
-        const newPlate = create_plate_info_element(pos);
+        const new_plate = create_plate_info_element(pos);
         const container = document.getElementById("plates")
-        container.appendChild(newPlate);
+        container.appendChild(new_plate);
     }
 }
 
+const ws = new WebSocket("ws://localhost:8080");
 document.addEventListener('DOMContentLoaded', function () {
-    const ws = new WebSocket("ws://localhost:8080");
-
     ws.onopen = () => {
         console.log("✅ WebSocket connected");
     };
@@ -115,4 +114,25 @@ document.addEventListener('DOMContentLoaded', function () {
         // console.log("after parsing:", data.value[1]);
         // handle_received_data(1,value);
     };
+});
+
+document.getElementById('random_order_button').onclick = call_random_order_method;
+function call_random_order_method() {
+    console.log("Placing random order");
+    ws.send("PlaceRandomOrder");
+}
+
+document.getElementById('random_order_input').addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+        const value = Number(event.target.value);
+        if (Number.isInteger(value) && value > 0) {
+            console.log('Input submitted:', value);
+            for (let i = 0; i < value; i++) {
+                ws.send("PlaceRandomOrder");
+            }
+        } else {
+            alert('Please enter a positive integer.');
+        }
+        event.target.value = '';
+    }
 });
