@@ -61,6 +61,15 @@ h2 {
   }
 }
 
+#robots > :nth-child(n+3),
+#gauges > :nth-child(n+3) {
+  margin-top: 2em;
+}
+
+#plates > :nth-child(n+3) {
+  margin-top: 5em;
+}
+
 .function-button {
     background-color: #3690cd;
     color: white;
