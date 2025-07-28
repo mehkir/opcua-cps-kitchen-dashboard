@@ -41,7 +41,7 @@ const Controller = {
     PLACE_RANDOM_ORDER : "PlaceRandomOrder"
 };
 
-const gauges = {};
+const gauge_objects = {};
 
 function create_robot_info_element(pos) {
   const p = document.createElement('p');
@@ -50,36 +50,35 @@ function create_robot_info_element(pos) {
 
   p.innerHTML = `
     <span style="display: block; text-align: center;">Pos ${pos}</span><br>
-    Recipe ID: <span id="${Robot.RECIPE_ID}-${pos}">None</span> <br>
-    Dish name: <span id="${Robot.DISH_NAME}-${pos}">None</span> <br>
-    Current tool: <span id="${Robot.CURRENT_TOOL}-${pos}">None</span> <br>
-    Action: <span id="${Robot.ACTION_NAME}-${pos}">None</span> <br>
-    Ingredients: <span id="${Robot.INGREDIENTS}-${pos}">None</span>
+    Recipe ID: <span id="${Robot.TYPE}-${Robot.RECIPE_ID}-${pos}">None</span> <br>
+    Dish name: <span id="${Robot.TYPE}-${Robot.DISH_NAME}-${pos}">None</span> <br>
+    Current tool: <span id="${Robot.TYPE}-${Robot.CURRENT_TOOL}-${pos}">None</span> <br>
+    Action: <span id="${Robot.TYPE}-${Robot.ACTION_NAME}-${pos}">None</span> <br>
+    Ingredients: <span id="${Robot.TYPE}-${Robot.INGREDIENTS}-${pos}">None</span>
   `;
 
   return p;
 }
 
-function update_robot_info_element(pos, data) {
-    const set_if_exists = (id, new_value) => {
-        const el = document.getElementById(`${id}-${pos}`);
+function update_info_element(data) {
+    const set_if_exists = (type, id, pos, new_value) => {
+        const el = document.getElementById(`${type}-${id}-${pos}`);
         if (!el) return;
         if (new_value !== undefined && new_value !== null && new_value !== '') {
-            el.textContent = new_value;
+            if (type === Robot.TYPE && id === Robot.OVERALL_TIME) {
+                gauge_objects[pos].refresh(Number(new_value));
+                return;
+            }
+            el.textContent = new_value.toString();
         }
     };
-
-    set_if_exists(Robot.RECIPE_ID, data.recipe);
-    set_if_exists(Robot.DISH_NAME, data.dish);
-    set_if_exists(Robot.CURRENT_TOOL, data.tool);
-    set_if_exists(Robot.ACTION_NAME, data.action);
-    set_if_exists(Robot.INGREDIENTS, data.ingredients);
+    set_if_exists(data.type, data.attribute_name, data.position, data.value);
 }
 
 
 function create_gauge(pos) {
     const div = document.createElement('div');
-    div.id = `gauge-${pos}`;
+    div.id = `${Robot.TYPE}-${Robot.OVERALL_TIME}-${pos}`;
     return div;
 }
 
@@ -90,30 +89,17 @@ function create_plate_info_element(pos, label) {
 
     p.innerHTML = `
         <span style="display: block; text-align: center;">${label}</span><br>
-        ID: <span id="${Conveyor.PLATE_ID}-${pos}">None</span> <br>
-        Recipe ID: <span id="${Conveyor.PLATE_RECIPE_ID}-${pos}">None</span> <br>
-        Occupied: <span id="${Conveyor.PLATE_OCCUPIED}-${pos}">None</span>
+        ID: <span id="${Conveyor.TYPE}-${Conveyor.PLATE_ID}-${pos}">None</span> <br>
+        Recipe ID: <span id="${Conveyor.TYPE}-${Conveyor.PLATE_RECIPE_ID}-${pos}">None</span> <br>
+        Occupied: <span id="${Conveyor.TYPE}-${Conveyor.PLATE_OCCUPIED}-${pos}">None</span>
     `;
 
     return p;
 }
 
-function update_plate_info_element(pos, data) {
-    const set_if_exists = (id, new_value) => {
-        const el = document.getElementById(`plate-${id}-${pos}`);
-        if (!el) return;
-        if (new_value !== undefined && new_value !== null && new_value !== '') {
-            el.textContent = new_value;
-        }
-    };
-
-    set_if_exists(Conveyor.PLATE_ID, data.id);
-    set_if_exists(Conveyor.PLATE_RECIPE_ID, data.recipe);
-    set_if_exists(Conveyor.PLATE_OCCUPIED, data.occupied);
-}
-
-function handle_received_data(pos, value) {
-    // gauges[pos].refresh(value);
+function handle_received_data(value) {
+    console.log("Handling received data:", value);
+    update_info_element(value);
 }
 
 const ws = new WebSocket("ws://localhost:8080");
@@ -128,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log("📨 Parsed data:", data);
         // const value = Number(data.value[1]);
         // console.log("after parsing:", data.value[1]);
-        // handle_received_data(1,value);
+        handle_received_data(data.value_dto);
     };
 });
 
@@ -151,8 +137,8 @@ document.getElementById('setup_environment').addEventListener('keydown', functio
                 // Create and append gauge info element
                 const gauge = create_gauge(position);
                 gauges.appendChild(gauge);
-                gauges[position] = new JustGage({
-                    id: `gauge-${position}`,
+                gauge_objects[position] = new JustGage({
+                    id: `${Robot.TYPE}-${Robot.OVERALL_TIME}-${position}`,
                     value: 0,
                     min: 0,
                     max: 100,
