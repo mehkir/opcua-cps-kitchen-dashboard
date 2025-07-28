@@ -120,6 +120,7 @@ const controller = { methods : {} };
         await opcua.create_subscription();
         for (const [browse_name, attribute_id] of Object.entries(robot.attributes)) {
             const robot_monitor = {
+                type: Robot.TYPE,
                 position: pos,
                 attribute_name: browse_name
             };
