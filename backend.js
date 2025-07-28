@@ -19,11 +19,10 @@ async function read_attribute_value(_server_url, _node_id) {
 }
 
 const robots = new Map();
-const conveyor = {};
-conveyor.plates = new Map();
-const controller = {};
-controller.methods = {};
-await (async () => {
+const conveyor = { plates: new Map() };
+const controller = { methods : {} };
+
+(async () => {
     for (const server of servers) {
         if (server.applicationType !== ApplicationType.Server) {
             console.log(`Skipping non-server application: ${server.applicationUri}`);
@@ -69,6 +68,7 @@ await (async () => {
         if ((instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Controller.TYPE)) !== NodeId.nullNodeId) {
             console.log(`Controller type found on server: ${server.discoveryUrl}`);
             const browse_methods_result = await opcua_browser_instance.browse_methods(server.discoveryUrl, instance_id);
+            controller.instance_id = instance_id;
             for (const method of browse_methods_result.references) {
                 console.log(`Controller method: ${method.browseName.name} (${method.nodeId.toString()})`);
                 controller.methods[method.browseName.name] = method.nodeId;
@@ -76,21 +76,54 @@ await (async () => {
             controller.url = server.discoveryUrl;
         }
     }
-})();
 
-const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: 8080 });
-const opcua_subscriber = require('./opcua-subscription.js');
-(async () => {
+    const WebSocket = require('ws');
+    const wss = new WebSocket.Server({ port: 8080 });
+
+    wss.on('connection', function connection(ws) {
+        ws.on('message', function incoming(message) {
+            console.log('received: %s', message);
+            if (message.toString() === Controller.PLACE_RANDOM_ORDER) {
+                console.log("Placing random order");
+                const method_id = controller.methods[Controller.PLACE_RANDOM_ORDER];
+                const url = controller.url;
+
+                (async () => {
+                    try {
+                        const client = OPCUAClient.create({});
+                        await client.connect(url);
+                        const session = await client.createSession();
+
+                        // Call method (no input arguments)
+                        const result = await session.call({
+                            objectId: controller.instance_id,
+                            methodId: method_id,
+                            inputArguments: []
+                        });
+
+                        console.log("Method call result:", result);
+
+                        await session.close();
+                        await client.disconnect();
+                    } catch (err) {
+                        console.error("Error calling controller method:", err);
+                    }
+                })();
+            }
+        });
+    });
+
+    const opcua_subscriber = require('./opcua-subscription.js');
     robots.forEach(async (robot, pos) => {
         const opcua = new opcua_subscriber(wss, robot.url);
         await opcua.create_session();
         await opcua.create_subscription();
-        const robot_monitor = {};
-        robot_monitor.position = pos;
         for (const [browse_name, attribute_id] of Object.entries(robot.attributes)) {
-            robot_monitor.attribute_name = browse_name;
-            console.log(`Subscribing to robot at position ${pos}`);
+            const robot_monitor = {
+                position: pos,
+                attribute_name: browse_name
+            };
+            console.log(`Subscribing to robot attribute ${browse_name} at position ${pos}`);
             await opcua.subscribe(attribute_id, robot_monitor);
         }
     });
