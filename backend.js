@@ -21,6 +21,7 @@ async function read_attribute_value(_server_url, _node_id) {
 const robots = new Map();
 const conveyor = { plates: new Map() };
 const controller = { methods : {} };
+const opcua_subscribers = [];
 
 (async () => {
     for (const server of servers) {
@@ -55,12 +56,13 @@ const controller = { methods : {} };
                 const browse_attributes_result = await opcua_browser_instance.browse_attributes(server.discoveryUrl, obj.nodeId);
                 for (const attr of browse_attributes_result.references) {
                     console.log(`Plate attribute: ${attr.browseName.name} (${attr.nodeId.toString()})`);
-                    plate_attributes[attr.browseName.name] = attr.nodeId;
-                    if (attr.browseName.name === Conveyor.PLATE_POSITION) {
-                        plate_attributes.position = await read_attribute_value(server.discoveryUrl, attr.nodeId);
+                    if (attr.browseName.name === Conveyor.PLATE_ID) {
+                        plate_attributes.id = await read_attribute_value(server.discoveryUrl, attr.nodeId);
+                        continue;
                     }
+                    plate_attributes[attr.browseName.name] = attr.nodeId;
                 }
-                conveyor.plates.set(plate_attributes.position, plate_attributes);
+                conveyor.plates.set(plate_attributes.id, plate_attributes);
             }
             conveyor.url = server.discoveryUrl;
         }
@@ -82,8 +84,9 @@ const controller = { methods : {} };
 
     wss.on('connection', function connection(ws) {
         ws.on('message', function incoming(message) {
-            console.log('received: %s', message);
-            if (message.toString() === Controller.PLACE_RANDOM_ORDER) {
+            const parsed_message = JSON.parse(message);
+            console.log('received: %s', parsed_message);
+            if (parsed_message.context === Controller.PLACE_RANDOM_ORDER) {
                 console.log("Placing random order");
                 const method_id = controller.methods[Controller.PLACE_RANDOM_ORDER];
                 const url = controller.url;
@@ -94,14 +97,14 @@ const controller = { methods : {} };
                         await client.connect(url);
                         const session = await client.createSession();
 
-                        // Call method (no input arguments)
-                        const result = await session.call({
-                            objectId: controller.instance_id,
-                            methodId: method_id,
-                            inputArguments: []
-                        });
-
-                        console.log("Method call result:", result);
+                        for (let i = 0; i < parsed_message.order_count; i++) {
+                            const result = await session.call({
+                                objectId: controller.instance_id,
+                                methodId: method_id,
+                                inputArguments: []
+                            });
+                            console.log("Method call result:", result);
+                        }
 
                         await session.close();
                         await client.disconnect();
@@ -115,9 +118,9 @@ const controller = { methods : {} };
 
     const opcua_subscriber = require('./opcua-subscription.js');
     robots.forEach(async (robot, pos) => {
-        const opcua = new opcua_subscriber(wss, robot.url);
-        await opcua.create_session();
-        await opcua.create_subscription();
+        const opcua_robot_sub = new opcua_subscriber(wss, robot.url);
+        await opcua_robot_sub.create_session();
+        await opcua_robot_sub.create_subscription();
         for (const [browse_name, attribute_id] of Object.entries(robot.attributes)) {
             const robot_monitor = {
                 type: Robot.TYPE,
@@ -125,7 +128,41 @@ const controller = { methods : {} };
                 attribute_name: browse_name
             };
             console.log(`Subscribing to robot attribute ${browse_name} at position ${pos}`);
-            await opcua.subscribe(attribute_id, robot_monitor);
+            await opcua_robot_sub.subscribe(attribute_id, robot_monitor);
         }
+        opcua_subscribers.push(opcua_robot_sub);
+    });
+
+    const opcua_conveyor_sub = new opcua_subscriber(wss, conveyor.url);
+    await opcua_conveyor_sub.create_session();
+    await opcua_conveyor_sub.create_subscription();
+    conveyor.plates.forEach(async (plate, id) => {
+        for (const [browse_name, attribute_id] of Object.entries(plate)) {
+            const plate_monitor = {
+                type: Conveyor.TYPE,
+                id: id,
+                position_id: plate[Conveyor.PLATE_POSITION],
+                attribute_name: browse_name
+            };
+            console.log(`Subscribing to conveyor plate attribute ${browse_name} of plate ${id}`);
+            await opcua_conveyor_sub.subscribe(attribute_id, plate_monitor);
+        }
+    });
+    opcua_subscribers.push(opcua_conveyor_sub);
+
+    // Cleanup on Ctrl+C
+    process.on('SIGINT', async () => {
+        console.log('🛑 Shutting down...');
+        for (const sub of opcua_subscribers) {
+            try {
+                await sub.disconnect();
+            } catch (err) {
+                console.error("Error during disconnect:", err);
+            }
+        }
+        wss.close(() => {
+            console.log('WebSocket server closed.');
+            process.exit(0);
+        });
     });
 })();
