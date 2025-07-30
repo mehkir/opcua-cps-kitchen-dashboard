@@ -62,6 +62,13 @@ function create_robot_info_element(pos) {
 
 function update_info_element(data) {
     const set_if_exists = (type, id, pos, new_value) => {
+        if (type === Conveyor.TYPE) {
+            const id_el = document.getElementById(`${type}-${Conveyor.PLATE_ID}-${pos}`)
+            if (id_el) {
+                id_el.textContent = data.id.toString();
+            }
+        }
+
         const el = document.getElementById(`${type}-${id}-${pos}`);
         if (!el) return;
         if (new_value !== undefined && new_value !== null && new_value !== '') {
@@ -112,8 +119,6 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log("📨 Received from server:", event.data);
         const data = JSON.parse(event.data);
         console.log("📨 Parsed data:", data);
-        // const value = Number(data.value[1]);
-        // console.log("after parsing:", data.value[1]);
         handle_received_data(data.value_dto);
     };
 });
@@ -160,8 +165,12 @@ document.getElementById('setup_environment').addEventListener('keydown', functio
 
 document.getElementById('random_order_button').onclick = call_random_order_method;
 function call_random_order_method() {
+    dto = {
+        context: Controller.PLACE_RANDOM_ORDER,
+        order_count: 1
+    }
     console.log("Placing random order");
-    ws.send("PlaceRandomOrder");
+    ws.send(JSON.stringify(dto));
 }
 
 document.getElementById('random_order_input').addEventListener('keydown', function(event) {
@@ -169,9 +178,12 @@ document.getElementById('random_order_input').addEventListener('keydown', functi
         const order_count = Number(event.target.value);
         if (Number.isInteger(order_count) && order_count > 0) {
             console.log('Order count submitted:', order_count);
-            for (let i = 0; i < order_count; i++) {
-                ws.send("PlaceRandomOrder");
-            }
+            dto = {
+                context: Controller.PLACE_RANDOM_ORDER,
+                order_count: order_count
+            };
+            console.log("Placing random order with count:", order_count);
+            ws.send(JSON.stringify(dto));
         } else {
             alert('Please enter a positive integer.');
         }
