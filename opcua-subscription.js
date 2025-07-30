@@ -6,7 +6,7 @@ const {
     MonitoringParametersOptions,
     ReadValueIdOptions
 } = require("node-opcua");
-const { Robot } = require("./browsenames");
+const { Conveyor } = require("./browsenames");
 
 
 class opcua_subscriber {
@@ -73,24 +73,15 @@ class opcua_subscriber {
             );
 
             // Handle data change
-            monitoredItem.on("changed", (dataValue) => {
-                let value = dataValue.value.value;
-                // if (Array.isArray(value)) {
-                //     value = value.map(item => item.toString());
-                // }
-
-                if (value_dto.attribute_name === Robot.DISH_NAME || value_dto.attribute_name === Robot.INGREDIENTS) {
-                    console.log(`Raw value for ${value_dto.attribute_name}:`, value);
-                    console.log(`DataType for ${value_dto.attribute_name}:`, dataValue.value.dataType);
-                }
-                // if (Array.isArray(value)) {
-                //     value = value.map(item => Buffer.isBuffer(item) ? item.toString('utf8') : item.toString());
-                // }
-                // if (Buffer.isBuffer(value)) {
-                //     value = value.toString('utf8');
-                // }
-
+            monitoredItem.on("changed", async (data_value) => {
+                let value = data_value.value.value;
                 console.log(`🔄 Attribute ${value_dto.attribute_name} changed:`, value);
+                if (value_dto.type === Conveyor.TYPE) {
+                    let position_data = await this.#session.read({
+                        nodeId: value_dto.position_id
+                    });
+                    value_dto.position = position_data.value.value;
+                }
                 value_dto.value = value;
 
                 // Broadcast to all connected clients
