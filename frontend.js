@@ -123,6 +123,12 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 });
 
+window.onbeforeunload = function() {
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ context: "frontend_closed" }));
+    }
+};
+
 document.getElementById('setup_environment').addEventListener('keydown', function(event) {
     if (event.key === 'Enter') {
         const robot_count = Number(event.target.value);

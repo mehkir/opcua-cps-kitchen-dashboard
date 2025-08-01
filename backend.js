@@ -113,6 +113,10 @@ const opcua_subscribers = [];
                     }
                 })();
             }
+            if (parsed_message.context === "frontend_closed") {
+                console.log("Frontend closed, cleaning up...");
+                ws.close();
+            }
         });
     });
 
