@@ -146,6 +146,8 @@ const opcua_subscribers = [];
                 type: Conveyor.TYPE,
                 id: id,
                 position_id: plate[Conveyor.PLATE_POSITION],
+                recipe_id: plate[Conveyor.PLATE_RECIPE_ID],
+                occupied_id: plate[Conveyor.PLATE_OCCUPIED],
                 attribute_name: browse_name
             };
             console.log(`Subscribing to conveyor plate attribute ${browse_name} of plate ${id}`);

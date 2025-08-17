@@ -77,12 +77,29 @@ class opcua_subscriber {
                 let value = data_value.value.value;
                 console.log(`🔄 Attribute ${value_dto.attribute_name} changed:`, value);
                 if (value_dto.type === Conveyor.TYPE) {
-                    let position_data = await this.#session.read({
-                        nodeId: value_dto.position_id
-                    });
-                    value_dto.position = position_data.value.value;
+                    if (value_dto.attribute_name !== Conveyor.PLATE_POSITION) {
+                        let position_data = await this.#session.read({
+                            nodeId: value_dto.position_id
+                        });
+                        value_dto[Conveyor.PLATE_POSITION] = position_data.value.value;
+                    }
+                    if (value_dto.attribute_name !== Conveyor.PLATE_RECIPE_ID) {
+                        let recipe_data = await this.#session.read({
+                            nodeId: value_dto.recipe_id
+                        });
+                        value_dto[Conveyor.PLATE_RECIPE_ID] = recipe_data.value.value;
+                    }
+                    if (value_dto.attribute_name !== Conveyor.PLATE_OCCUPIED) {
+                        let occupied_data = await this.#session.read({
+                            nodeId: value_dto.occupied_id
+                        });
+                        value_dto[Conveyor.PLATE_OCCUPIED] = occupied_data.value.value;  
+                    }
+                    value_dto[value_dto.attribute_name] = value;
                 }
-                value_dto.value = value;
+                if (value_dto.type === Robot.TYPE) {
+                    value_dto.value = value;
+                }
 
                 // Broadcast to all connected clients
                 this.#wss.clients.forEach(function each(client) {

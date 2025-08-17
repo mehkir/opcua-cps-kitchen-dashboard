@@ -60,19 +60,12 @@ function create_robot_info_element(pos) {
   return p;
 }
 
-function update_info_element(data) {
-    const set_if_exists = (type, id, pos, new_value) => {
-        if (type === Conveyor.TYPE) {
-            const id_el = document.getElementById(`${type}-${Conveyor.PLATE_ID}-${pos}`)
-            if (id_el) {
-                id_el.textContent = data.id.toString();
-            }
-        }
-
-        const el = document.getElementById(`${type}-${id}-${pos}`);
+function update_robot_info_element(data) {
+    const set_if_exists = (type, attribute_name, pos, new_value) => {
+        const el = document.getElementById(`${type}-${attribute_name}-${pos}`);
         if (!el) return;
         if (new_value !== undefined && new_value !== null && new_value !== '') {
-            if (type === Robot.TYPE && id === Robot.OVERALL_TIME) {
+            if (attribute_name === Robot.OVERALL_TIME) {
                 gauge_objects[pos].refresh(Number(new_value));
                 return;
             }
@@ -82,6 +75,26 @@ function update_info_element(data) {
     set_if_exists(data.type, data.attribute_name, data.position, data.value);
 }
 
+function update_conveyor_info_element(data) {
+    const set_if_exists = (data) => {
+        const id_el = document.getElementById(`${data.type}-${Conveyor.PLATE_ID}-${data[Conveyor.PLATE_POSITION]}`);
+        const new_id = data.id;
+        if (id_el && new_id !== undefined && new_id !== null && new_id !== '') {
+            id_el.textContent = new_id.toString();
+        }
+        const recipe_el = document.getElementById(`${data.type}-${Conveyor.PLATE_RECIPE_ID}-${data[Conveyor.PLATE_POSITION]}`);
+        const new_recipe = data[Conveyor.PLATE_RECIPE_ID];
+        if (recipe_el && new_recipe !== undefined && new_recipe !== null && new_recipe !== '') {
+            recipe_el.textContent = new_recipe.toString();
+        }
+        const occupied_el = document.getElementById(`${data.type}-${Conveyor.PLATE_OCCUPIED}-${data[Conveyor.PLATE_POSITION]}`);
+        const new_occupied = data[Conveyor.PLATE_OCCUPIED];
+        if (occupied_el && new_occupied !== undefined && new_occupied !== null && new_occupied !== '') {
+            occupied_el.textContent = new_occupied.toString();
+        }
+    };
+    set_if_exists(data);
+}
 
 function create_gauge(pos) {
     const div = document.createElement('div');
@@ -106,7 +119,12 @@ function create_plate_info_element(pos, label) {
 
 function handle_received_data(value) {
     console.log("Handling received data:", value);
-    update_info_element(value);
+    if  (value.type === Robot.TYPE) {
+        update_robot_info_element(value);
+    }
+    if (value.type === Conveyor.TYPE) {
+        update_conveyor_info_element(value);
+    }
 }
 
 const ws = new WebSocket("ws://localhost:8080");
