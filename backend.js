@@ -81,13 +81,14 @@ if (options.robotCount === undefined && typeof options.robotCount !== 'number') 
 }
 console.log("Robot Count:", options.robotCount);
 
-let servers;
-try {
-    servers = my_module.findServers(DISCOVERY_URL);   
-} catch (error) {
-    console.log(`${error} (is the discovery server started?)`);
-    return;
-}
+const opcua_browser_instance = new opcua_browser();
+const robots = new Map();
+let conveyor;
+let controller;
+let run_browsing = true;
+let interval_id = null;
+const opcua_subscribers = [];
+
 const ws_server = new WebSocket.Server({ port: WS_PORT });
 // Cleanup on Ctrl+C
 process.on('SIGINT', async () => {
@@ -105,33 +106,49 @@ process.on('SIGINT', async () => {
     });
 });
 
-const opcua_browser_instance = new opcua_browser();
-const robots = new Map();
-let conveyor;
-let controller;
-const opcua_subscribers = [];
+async function browse_servers () {
+    if (interval_id)
+        return;
 
-for (const server of servers) {
-    if (server.applicationType !== ApplicationType.Server) {
-        console.log(`Skipping non-server application: ${server.applicationUri}`);
-        continue;
-    }
+    interval_id = setInterval(async () => {
+        if (!run_browsing) {
+            clearInterval(interval_id);
+            interval_id = null;
+            console.log('Browsing stopped')
+        } else {
+            let servers;
+            try {
+                servers = my_module.findServers(DISCOVERY_URL);   
+            } catch (error) {
+                console.log(`${error} (is the discovery server started?)`);
+                return;
+            }
 
-    if ((instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Robot.TYPE)) !== NodeId.nullNodeId) {
-        console.log(`Robot type found on server: ${server.discoveryUrl}`);
-        const robot_server = await browse_robot_instance(server, instance_id, robots);
-        robots.set(robot_server.position, robot_server);
-    }
+            for (const server of servers) {
+                if (server.applicationType !== ApplicationType.Server) {
+                    console.log(`Skipping non-server application: ${server.applicationUri}`);
+                    continue;
+                }
 
-    if ((instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Conveyor.TYPE)) !== NodeId.nullNodeId) {
-        console.log(`Conveyor type found on server: ${server.discoveryUrl}`);
-        conveyor = await browse_conveyor_instance(server, instance_id);
-    }
+                let instance_id;
+                if ((instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Robot.TYPE)) !== NodeId.nullNodeId) {
+                    console.log(`Robot type found on server: ${server.discoveryUrl}`);
+                    const robot_server = await browse_robot_instance(server, instance_id, robots);
+                    robots.set(robot_server.position, robot_server);
+                }
 
-    if ((instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Controller.TYPE)) !== NodeId.nullNodeId) {
-        console.log(`Controller type found on server: ${server.discoveryUrl}`);
-        controller = await browse_controller_instance(server, instance_id);
-    }
+                if ((instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Conveyor.TYPE)) !== NodeId.nullNodeId) {
+                    console.log(`Conveyor type found on server: ${server.discoveryUrl}`);
+                    conveyor = await browse_conveyor_instance(server, instance_id);
+                }
+
+                if ((instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Controller.TYPE)) !== NodeId.nullNodeId) {
+                    console.log(`Controller type found on server: ${server.discoveryUrl}`);
+                    controller = await browse_controller_instance(server, instance_id);
+                }
+            }
+        }
+    }, 1000);
 }
 
 (async () => {
