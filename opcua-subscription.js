@@ -52,6 +52,7 @@ class opcua_subscriber {
             );
 
             this.#subscription.on("terminated", () => console.log("❌ Subscription terminated"));
+            this.#subscription.on("error", (err) => console.error("❌ Subscription error:", err));
         } catch (err) {
             console.error("❌ Error:", err);
         }

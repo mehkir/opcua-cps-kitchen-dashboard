@@ -4,6 +4,7 @@ const my_module = require('./my-addons/my_module.node');
 const { Robot, Conveyor, Controller } = require('./browsenames');
 const { ApplicationType, NodeId, OPCUAClient, resolveNodeId } = require("node-opcua");
 const opcua_browser = require('./opcua-browser.js');
+const opcua_subscriber = require('./opcua-subscription.js');
 const WebSocket = require('ws');
 const program = require("commander");
 
@@ -69,6 +70,42 @@ async function browse_controller_instance (_server, _instance_id) {
     return controller;
 }
 
+async function subscribe_conveyor (_ws_server, _conveyor, _conveyor_subscriber) {
+    _conveyor_subscriber = new opcua_subscriber(_ws_server, _conveyor.url);
+    await _conveyor_subscriber.create_session();
+    await _conveyor_subscriber.create_subscription();
+    _conveyor.plates.forEach(async (plate, id) => {
+        for (const [browse_name, attribute_id] of Object.entries(plate)) {
+            const plate_monitor = {
+                type: Conveyor.TYPE,
+                id: id,
+                position_id: plate[Conveyor.PLATE_POSITION],
+                recipe_id: plate[Conveyor.PLATE_RECIPE_ID],
+                occupied_id: plate[Conveyor.PLATE_OCCUPIED],
+                attribute_name: browse_name
+            };
+            console.log(`Subscribing to conveyor plate attribute ${browse_name} of plate ${id}`);
+            await _conveyor_subscriber.subscribe(attribute_id, plate_monitor);
+        }
+    });
+}
+
+async function subscribe_robot (_ws_server, _robot, _robot_subscribers) {
+    const opcua_robot_sub = new opcua_subscriber(_ws_server, _robot.url);
+    await opcua_robot_sub.create_session();
+    await opcua_robot_sub.create_subscription();
+    for (const [browse_name, attribute_id] of Object.entries(_robot.attributes)) {
+        const robot_monitor = {
+            type: Robot.TYPE,
+            position: _robot.position,
+            attribute_name: browse_name
+        };
+        console.log(`Subscribing to robot attribute ${browse_name} at position ${_robot.position}`);
+        await opcua_robot_sub.subscribe(attribute_id, robot_monitor);
+    }
+    _robot_subscribers.set(_robot.position, opcua_robot_sub);
+}
+
 program
   .option("-rc, --robot-count <number>", "Number of robots to simulate")
 
@@ -81,35 +118,31 @@ if (options.robotCount === undefined && typeof options.robotCount !== 'number') 
 }
 console.log("Robot Count:", options.robotCount);
 
-const opcua_browser_instance = new opcua_browser();
-const robots = new Map();
-let conveyor;
 let controller;
 let run_browsing = true;
 let interval_id = null;
-const opcua_subscribers = [];
+const robot_subscribers = new Map();
+let conveyor_subscriber = null;
 
 const ws_server = new WebSocket.Server({ port: WS_PORT });
 // Cleanup on Ctrl+C
 process.on('SIGINT', async () => {
     console.log('🛑 Shutting down...');
-    for (const sub of opcua_subscribers) {
-        try {
-            await sub.disconnect();
-        } catch (err) {
-            console.error("Error during disconnect:", err);
-        }
+    for (const robot_sub of robot_subscribers.values()) {
+        robot_sub.disconnect().catch(err => console.error("Error during robot disconnect:", err));
     }
+    await conveyor_subscriber.disconnect().catch(err => console.error("Error during conveyor disconnect:", err));
     ws_server.close(() => {
         console.log('WebSocket server closed.');
         process.exit(0);
     });
 });
 
-async function browse_servers () {
+async function browse_servers (_ws_server, _robot_subscribers, _conveyor_subscriber, _controller) {
     if (interval_id)
         return;
 
+    const opcua_browser_instance = new opcua_browser();
     interval_id = setInterval(async () => {
         if (!run_browsing) {
             clearInterval(interval_id);
@@ -133,18 +166,19 @@ async function browse_servers () {
                 let instance_id;
                 if ((instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Robot.TYPE)) !== NodeId.nullNodeId) {
                     console.log(`Robot type found on server: ${server.discoveryUrl}`);
-                    const robot_server = await browse_robot_instance(server, instance_id, robots);
-                    robots.set(robot_server.position, robot_server);
+                    const robot_server = await browse_robot_instance(server, instance_id);
+                    await subscribe_robot(_ws_server, robot_server, _robot_subscribers);
                 }
 
                 if ((instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Conveyor.TYPE)) !== NodeId.nullNodeId) {
                     console.log(`Conveyor type found on server: ${server.discoveryUrl}`);
-                    conveyor = await browse_conveyor_instance(server, instance_id);
+                    const conveyor = await browse_conveyor_instance(server, instance_id);
+                    await subscribe_conveyor(_ws_server, conveyor, _conveyor_subscriber);
                 }
 
                 if ((instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Controller.TYPE)) !== NodeId.nullNodeId) {
                     console.log(`Controller type found on server: ${server.discoveryUrl}`);
-                    controller = await browse_controller_instance(server, instance_id);
+                    _controller = await browse_controller_instance(server, instance_id);
                 }
             }
         }
@@ -152,10 +186,6 @@ async function browse_servers () {
 }
 
 (async () => {
-
-
-
-
     ws_server.on('connection', function connection(ws) {
         ws.on('message', function incoming(message) {
             const parsed_message = JSON.parse(message);
@@ -193,40 +223,7 @@ async function browse_servers () {
             }
         });
     });
-
-    const opcua_subscriber = require('./opcua-subscription.js');
-    robots.forEach(async (robot, pos) => {
-        const opcua_robot_sub = new opcua_subscriber(ws_server, robot.url);
-        await opcua_robot_sub.create_session();
-        await opcua_robot_sub.create_subscription();
-        for (const [browse_name, attribute_id] of Object.entries(robot.attributes)) {
-            const robot_monitor = {
-                type: Robot.TYPE,
-                position: pos,
-                attribute_name: browse_name
-            };
-            console.log(`Subscribing to robot attribute ${browse_name} at position ${pos}`);
-            await opcua_robot_sub.subscribe(attribute_id, robot_monitor);
-        }
-        opcua_subscribers.push(opcua_robot_sub);
-    });
-
-    const opcua_conveyor_sub = new opcua_subscriber(ws_server, conveyor.url);
-    await opcua_conveyor_sub.create_session();
-    await opcua_conveyor_sub.create_subscription();
-    conveyor.plates.forEach(async (plate, id) => {
-        for (const [browse_name, attribute_id] of Object.entries(plate)) {
-            const plate_monitor = {
-                type: Conveyor.TYPE,
-                id: id,
-                position_id: plate[Conveyor.PLATE_POSITION],
-                recipe_id: plate[Conveyor.PLATE_RECIPE_ID],
-                occupied_id: plate[Conveyor.PLATE_OCCUPIED],
-                attribute_name: browse_name
-            };
-            console.log(`Subscribing to conveyor plate attribute ${browse_name} of plate ${id}`);
-            await opcua_conveyor_sub.subscribe(attribute_id, plate_monitor);
-        }
-    });
-    opcua_subscribers.push(opcua_conveyor_sub);
+    // TODO: start browse instance with checking start loop condition
+    // TODO: add subscription error callback
+    // TODO: Change stop condition in browse instance and remove browsing flag
 })();
