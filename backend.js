@@ -106,45 +106,13 @@ async function subscribe_robot (_ws_server, _robot, _robot_subscribers) {
     _robot_subscribers.set(_robot.position, opcua_robot_sub);
 }
 
-program
-  .option("-rc, --robot-count <number>", "Number of robots to simulate")
-
-program.parse(process.argv);
-
-const options = program.opts();
-if (options.robotCount === undefined && typeof options.robotCount !== 'number') {
-    console.log("Robot Count is required and must be of type number");
-    process.exit(1);
-}
-console.log("Robot Count:", options.robotCount);
-
-let controller;
-let run_browsing = true;
-let interval_id = null;
-const robot_subscribers = new Map();
-let conveyor_subscriber = null;
-
-const ws_server = new WebSocket.Server({ port: WS_PORT });
-// Cleanup on Ctrl+C
-process.on('SIGINT', async () => {
-    console.log('🛑 Shutting down...');
-    for (const robot_sub of robot_subscribers.values()) {
-        robot_sub.disconnect().catch(err => console.error("Error during robot disconnect:", err));
-    }
-    await conveyor_subscriber.disconnect().catch(err => console.error("Error during conveyor disconnect:", err));
-    ws_server.close(() => {
-        console.log('WebSocket server closed.');
-        process.exit(0);
-    });
-});
-
-async function browse_servers (_ws_server, _robot_subscribers, _conveyor_subscriber, _controller) {
+async function browse_servers () {
     if (interval_id)
         return;
 
     const opcua_browser_instance = new opcua_browser();
     interval_id = setInterval(async () => {
-        if (!run_browsing) {
+        if (!is_run_browsing()) {
             clearInterval(interval_id);
             interval_id = null;
             console.log('Browsing stopped')
@@ -164,28 +132,93 @@ async function browse_servers (_ws_server, _robot_subscribers, _conveyor_subscri
                 }
 
                 let instance_id;
-                if ((instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Robot.TYPE)) !== NodeId.nullNodeId) {
+                if (robot_subscribers.size < robot_count && (instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Robot.TYPE)) !== NodeId.nullNodeId) {
                     console.log(`Robot type found on server: ${server.discoveryUrl}`);
                     const robot_server = await browse_robot_instance(server, instance_id);
-                    await subscribe_robot(_ws_server, robot_server, _robot_subscribers);
+                    await subscribe_robot(ws_server, robot_server, robot_subscribers);
                 }
 
-                if ((instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Conveyor.TYPE)) !== NodeId.nullNodeId) {
+                if (conveyor_subscriber === null && (instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Conveyor.TYPE)) !== NodeId.nullNodeId) {
                     console.log(`Conveyor type found on server: ${server.discoveryUrl}`);
                     const conveyor = await browse_conveyor_instance(server, instance_id);
-                    await subscribe_conveyor(_ws_server, conveyor, _conveyor_subscriber);
+                    await subscribe_conveyor(ws_server, conveyor, conveyor_subscriber);
                 }
 
-                if ((instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Controller.TYPE)) !== NodeId.nullNodeId) {
+                if (controller === null && (instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Controller.TYPE)) !== NodeId.nullNodeId) {
                     console.log(`Controller type found on server: ${server.discoveryUrl}`);
-                    _controller = await browse_controller_instance(server, instance_id);
+                    controller = await browse_controller_instance(server, instance_id);
                 }
             }
         }
     }, 1000);
 }
 
+function is_run_browsing() {
+    return controller === null || robot_subscribers.size < robot_count || conveyor_subscriber === null;
+}
+
+function remove_robot_subscriber(position) {
+    const robot_sub = robot_subscribers.get(position);
+    if (robot_sub) {
+        robot_sub.disconnect().catch(err => console.error("Error during robot disconnect:", err));
+        robot_subscribers.delete(position);
+    }
+    browse_servers();
+}
+
+function remove_conveyor_subscriber() {
+    if (conveyor_subscriber) {
+        conveyor_subscriber.disconnect().catch(err => console.error("Error during conveyor disconnect:", err));
+        conveyor_subscriber = null;
+    }
+    browse_servers();
+}
+
+function reset_controller() {
+    if (controller) {
+        controller = null;
+    }
+    browse_servers();
+}
+
+program
+  .option("-rc, --robot-count <number>", "Number of robots to simulate")
+
+program.parse(process.argv);
+
+const options = program.opts();
+if (options.robotCount === undefined && typeof options.robotCount !== 'number') {
+    console.log("Robot Count is required and must be of type number");
+    process.exit(1);
+}
+const robot_count = options.robotCount
+console.log("Robot Count:", robot_count);
+
+const remove_callbacks = new Map();
+remove_callbacks.set(Robot.TYPE, remove_robot_subscriber);
+remove_callbacks.set(Conveyor.TYPE, remove_conveyor_subscriber);
+
+let interval_id = null;
+let controller = null;
+const robot_subscribers = new Map();
+let conveyor_subscriber = null;
+
+const ws_server = new WebSocket.Server({ port: WS_PORT });
+// Cleanup on Ctrl+C
+process.on('SIGINT', async () => {
+    console.log('🛑 Shutting down...');
+    for (const robot_sub of robot_subscribers.values()) {
+        robot_sub.disconnect().catch(err => console.error("Error during robot disconnect:", err));
+    }
+    await conveyor_subscriber.disconnect().catch(err => console.error("Error during conveyor disconnect:", err));
+    ws_server.close(() => {
+        console.log('WebSocket server closed.');
+        process.exit(0);
+    });
+});
+
 (async () => {
+    // Start WebSocket server
     ws_server.on('connection', function connection(ws) {
         ws.on('message', function incoming(message) {
             const parsed_message = JSON.parse(message);
@@ -200,7 +233,6 @@ async function browse_servers (_ws_server, _robot_subscribers, _conveyor_subscri
                         const client = OPCUAClient.create({});
                         await client.connect(url);
                         const session = await client.createSession();
-
                         for (let i = 0; i < parsed_message.order_count; i++) {
                             const result = await session.call({
                                 objectId: controller.instance_id,
@@ -209,11 +241,11 @@ async function browse_servers (_ws_server, _robot_subscribers, _conveyor_subscri
                             });
                             console.log("Method call result:", result);
                         }
-
                         await session.close();
                         await client.disconnect();
                     } catch (err) {
                         console.error("Error calling controller method:", err);
+                        reset_controller();
                     }
                 })();
             }
@@ -223,7 +255,9 @@ async function browse_servers (_ws_server, _robot_subscribers, _conveyor_subscri
             }
         });
     });
-    // TODO: start browse instance with checking start loop condition
+    // Schedule browse instance
+    browse_servers();
     // TODO: add subscription error callback
-    // TODO: Change stop condition in browse instance and remove browsing flag
+
 })();
+
