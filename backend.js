@@ -164,7 +164,8 @@ async function browse_servers () {
                 if (robot_subscribers.size < robot_count && (instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Robot.TYPE)) !== NodeId.nullNodeId) {
                     console.log(`Robot type found on server: ${server.discoveryUrl}`);
                     const robot_server = await browse_robot_instance(server, instance_id);
-                    await subscribe_robot(ws_server, robot_server, robot_subscribers);
+                    if (!robot_subscribers.has(robot_server.position))
+                        await subscribe_robot(ws_server, robot_server, robot_subscribers);
                 }
 
                 if (conveyor_subscriber === null && (instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Conveyor.TYPE)) !== NodeId.nullNodeId) {
