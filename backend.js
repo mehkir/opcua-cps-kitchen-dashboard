@@ -21,6 +21,7 @@ async function read_attribute_value(_server_url, _node_id) {
 }
 
 async function browse_robot_instance(_server, _instance_id) {
+    const opcua_browser_instance = new opcua_browser();
     const browse_attributes_result = await opcua_browser_instance.browse_attributes(_server.discoveryUrl, _instance_id);
     const robot_server = {
         attributes : {}
@@ -39,6 +40,7 @@ async function browse_robot_instance(_server, _instance_id) {
 
 async function browse_conveyor_instance(_server, _instance_id) {
     const conveyor = { plates: new Map() };
+    const opcua_browser_instance = new opcua_browser();
     const browse_objects_result = await opcua_browser_instance.browse_objects(_server.discoveryUrl, _instance_id, resolveNodeId("HasComponent"));
     for (const obj of browse_objects_result.references) {
         const plate_attributes = {};
@@ -60,6 +62,7 @@ async function browse_conveyor_instance(_server, _instance_id) {
 
 async function browse_controller_instance (_server, _instance_id) {
     const controller = { methods : {} };
+    const opcua_browser_instance = new opcua_browser();
     const browse_methods_result = await opcua_browser_instance.browse_methods(_server.discoveryUrl, _instance_id);
     controller.instance_id = _instance_id;
     for (const method of browse_methods_result.references) {
