@@ -73,10 +73,10 @@ async function browse_controller_instance (_server, _instance_id) {
     return controller;
 }
 
-async function subscribe_conveyor (_ws_server, _conveyor, _conveyor_subscriber) {
-    _conveyor_subscriber = new opcua_subscriber(_ws_server, _conveyor.url, remove_callbacks);
-    await _conveyor_subscriber.create_session();
-    await _conveyor_subscriber.create_subscription();
+async function subscribe_conveyor (_conveyor) {
+    conveyor_subscriber = new opcua_subscriber(ws_server, _conveyor.url, remove_callbacks);
+    await conveyor_subscriber.create_session();
+    await conveyor_subscriber.create_subscription();
     _conveyor.plates.forEach(async (plate, id) => {
         for (const [browse_name, attribute_id] of Object.entries(plate)) {
             const plate_monitor = {
@@ -88,13 +88,13 @@ async function subscribe_conveyor (_ws_server, _conveyor, _conveyor_subscriber) 
                 attribute_name: browse_name
             };
             console.log(`Subscribing to conveyor plate attribute ${browse_name} of plate ${id}`);
-            await _conveyor_subscriber.subscribe(attribute_id, plate_monitor);
+            await conveyor_subscriber.subscribe(attribute_id, plate_monitor);
         }
     });
 }
 
-async function subscribe_robot (_ws_server, _robot, _robot_subscribers) {
-    const opcua_robot_sub = new opcua_subscriber(_ws_server, _robot.url, remove_callbacks);
+async function subscribe_robot (_robot) {
+    const opcua_robot_sub = new opcua_subscriber(ws_server, _robot.url, remove_callbacks);
     await opcua_robot_sub.create_session();
     await opcua_robot_sub.create_subscription();
     for (const [browse_name, attribute_id] of Object.entries(_robot.attributes)) {
@@ -106,7 +106,7 @@ async function subscribe_robot (_ws_server, _robot, _robot_subscribers) {
         console.log(`Subscribing to robot attribute ${browse_name} at position ${_robot.position}`);
         await opcua_robot_sub.subscribe(attribute_id, robot_monitor);
     }
-    _robot_subscribers.set(_robot.position, opcua_robot_sub);
+    robot_subscribers.set(_robot.position, opcua_robot_sub);
 }
 
 async function place_random_order (_order_count) {
@@ -165,13 +165,13 @@ async function browse_servers () {
                     console.log(`Robot type found on server: ${server.discoveryUrl}`);
                     const robot_server = await browse_robot_instance(server, instance_id);
                     if (!robot_subscribers.has(robot_server.position))
-                        await subscribe_robot(ws_server, robot_server, robot_subscribers);
+                        await subscribe_robot(robot_server);
                 }
 
                 if (conveyor_subscriber === null && (instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Conveyor.TYPE)) !== NodeId.nullNodeId) {
                     console.log(`Conveyor type found on server: ${server.discoveryUrl}`);
-                    const conveyor = await browse_conveyor_instance(server, instance_id);
-                    await subscribe_conveyor(ws_server, conveyor, conveyor_subscriber);
+                    const conveyor_server = await browse_conveyor_instance(server, instance_id);
+                    await subscribe_conveyor(conveyor_server);
                 }
 
                 if (controller === null && (instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Controller.TYPE)) !== NodeId.nullNodeId) {
