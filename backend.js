@@ -246,8 +246,8 @@ process.on('SIGINT', async () => {
 
 
 // Start WebSocket server
-ws_server.on('connection', function connection(ws) {
-    ws.on('message', async function incoming(message) {
+ws_server.on('connection', function connection(ws_connection) {
+    ws_connection.on('message', async function incoming(message) {
         const parsed_message = JSON.parse(message);
         console.log('received: %s', parsed_message);
         if (parsed_message.context === Controller.PLACE_RANDOM_ORDER) {
@@ -255,7 +255,7 @@ ws_server.on('connection', function connection(ws) {
         }
         if (parsed_message.context === "frontend_closed") {
             console.log("Frontend closed, cleaning up...");
-            ws.close();
+            ws_connection.close();
         }
     });
 });
