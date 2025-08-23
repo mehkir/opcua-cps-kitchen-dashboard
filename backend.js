@@ -71,7 +71,7 @@ async function browse_controller_instance (_server, _instance_id) {
 }
 
 async function subscribe_conveyor (_ws_server, _conveyor, _conveyor_subscriber) {
-    _conveyor_subscriber = new opcua_subscriber(_ws_server, _conveyor.url);
+    _conveyor_subscriber = new opcua_subscriber(_ws_server, _conveyor.url, remove_callbacks);
     await _conveyor_subscriber.create_session();
     await _conveyor_subscriber.create_subscription();
     _conveyor.plates.forEach(async (plate, id) => {
@@ -91,7 +91,7 @@ async function subscribe_conveyor (_ws_server, _conveyor, _conveyor_subscriber) 
 }
 
 async function subscribe_robot (_ws_server, _robot, _robot_subscribers) {
-    const opcua_robot_sub = new opcua_subscriber(_ws_server, _robot.url);
+    const opcua_robot_sub = new opcua_subscriber(_ws_server, _robot.url, remove_callbacks);
     await opcua_robot_sub.create_session();
     await opcua_robot_sub.create_subscription();
     for (const [browse_name, attribute_id] of Object.entries(_robot.attributes)) {
@@ -150,6 +150,7 @@ async function browse_servers () {
                 }
             }
         }
+        console.log("Browsing ...");
     }, 1000);
 }
 
@@ -157,11 +158,11 @@ function is_run_browsing() {
     return controller === null || robot_subscribers.size < robot_count || conveyor_subscriber === null;
 }
 
-function remove_robot_subscriber(position) {
-    const robot_sub = robot_subscribers.get(position);
+function remove_robot_subscriber(_position) {
+    const robot_sub = robot_subscribers.get(_position);
     if (robot_sub) {
         robot_sub.disconnect().catch(err => console.error("Error during robot disconnect:", err));
-        robot_subscribers.delete(position);
+        robot_subscribers.delete(_position);
     }
     browse_servers();
 }
@@ -185,10 +186,9 @@ program
   .option("-rc, --robot-count <number>", "Number of robots to simulate")
 
 program.parse(process.argv);
-
 const options = program.opts();
-if (options.robotCount === undefined && typeof options.robotCount !== 'number') {
-    console.log("Robot Count is required and must be of type number");
+if (options.robotCount === undefined || typeof options.robotCount !== 'number' || options.robotCount <= 0) {
+    console.log("A positive number is required for robot Count");
     process.exit(1);
 }
 const robot_count = options.robotCount
@@ -229,10 +229,11 @@ process.on('SIGINT', async () => {
                 const url = controller.url;
 
                 (async () => {
+                    const client = OPCUAClient.create({});
+                    let session = null;
                     try {
-                        const client = OPCUAClient.create({});
                         await client.connect(url);
-                        const session = await client.createSession();
+                        session = await client.createSession();
                         for (let i = 0; i < parsed_message.order_count; i++) {
                             const result = await session.call({
                                 objectId: controller.instance_id,
@@ -241,11 +242,12 @@ process.on('SIGINT', async () => {
                             });
                             console.log("Method call result:", result);
                         }
-                        await session.close();
-                        await client.disconnect();
                     } catch (err) {
                         console.error("Error calling controller method:", err);
                         reset_controller();
+                    } finally {
+                        if (session) await session.close();
+                        await client.disconnect();
                     }
                 })();
             }
@@ -257,7 +259,5 @@ process.on('SIGINT', async () => {
     });
     // Schedule browse instance
     browse_servers();
-    // TODO: add subscription error callback
-
 })();
 

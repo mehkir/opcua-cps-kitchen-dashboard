@@ -12,12 +12,14 @@ const { Conveyor, Robot } = require("./browsenames");
 class opcua_subscriber {
     #wss;
     #endpoint_url;
+    #remove_callbacks;
     #client;
     #session;
     #subscription;
-    constructor(_wss, _endpoint_url) {
+    constructor(_wss, _endpoint_url, _remove_callbacks) {
         this.#wss = _wss;
         this.#endpoint_url = _endpoint_url;
+        this.#remove_callbacks = _remove_callbacks;
     }
 
     async create_session() {
@@ -50,9 +52,7 @@ class opcua_subscriber {
             this.#subscription.on("started", () =>
                 console.log("📡 Subscription started (ID:", this.#subscription.subscriptionId, ")")
             );
-
             this.#subscription.on("terminated", () => console.log("❌ Subscription terminated"));
-            this.#subscription.on("error", (err) => console.error("❌ Subscription error:", err));
         } catch (err) {
             console.error("❌ Error:", err);
         }
@@ -78,24 +78,28 @@ class opcua_subscriber {
                 let value = data_value.value.value;
                 console.log(`🔄 Attribute ${value_dto.attribute_name} changed:`, value);
                 if (value_dto.type === Conveyor.TYPE) {
+                    // Read plate position
                     if (value_dto.attribute_name !== Conveyor.PLATE_POSITION) {
                         let position_data = await this.#session.read({
                             nodeId: value_dto.position_id
                         });
                         value_dto[Conveyor.PLATE_POSITION] = position_data.value.value;
                     }
+                    // Read plate recipe
                     if (value_dto.attribute_name !== Conveyor.PLATE_RECIPE_ID) {
                         let recipe_data = await this.#session.read({
                             nodeId: value_dto.recipe_id
                         });
                         value_dto[Conveyor.PLATE_RECIPE_ID] = recipe_data.value.value;
                     }
+                    // Read plate occupied status
                     if (value_dto.attribute_name !== Conveyor.PLATE_OCCUPIED) {
                         let occupied_data = await this.#session.read({
                             nodeId: value_dto.occupied_id
                         });
                         value_dto[Conveyor.PLATE_OCCUPIED] = occupied_data.value.value;  
                     }
+                    // Update the changed conveyor attribute
                     value_dto[value_dto.attribute_name] = value;
                 }
                 if (value_dto.type === Robot.TYPE) {
@@ -112,6 +116,15 @@ class opcua_subscriber {
         } catch (err) {
             console.error("❌ Error:", err);
         }
+        this.#subscription.on("error", (err) => {
+            console.error("❌ Subscription error:", err)
+            if (value_dto.type === Conveyor.TYPE) {
+                this.#remove_callbacks.get(value_dto.type)();
+            }
+            if (value_dto.type === Robot.TYPE) {
+                this.#remove_callbacks.get(value_dto.type)(value_dto.position);
+            }
+        });
     }
 
     async disconnect() {
