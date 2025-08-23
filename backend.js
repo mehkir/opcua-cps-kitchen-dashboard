@@ -187,11 +187,11 @@ program
 
 program.parse(process.argv);
 const options = program.opts();
-if (options.robotCount === undefined || typeof options.robotCount !== 'number' || options.robotCount <= 0) {
+const robot_count = Number(options.robotCount);
+if (isNaN(robot_count) || robot_count <= 0) {
     console.log("A positive number is required for robot Count");
     process.exit(1);
 }
-const robot_count = options.robotCount
 console.log("Robot Count:", robot_count);
 
 const remove_callbacks = new Map();
@@ -210,7 +210,8 @@ process.on('SIGINT', async () => {
     for (const robot_sub of robot_subscribers.values()) {
         robot_sub.disconnect().catch(err => console.error("Error during robot disconnect:", err));
     }
-    await conveyor_subscriber.disconnect().catch(err => console.error("Error during conveyor disconnect:", err));
+    if (conveyor_subscriber)
+        await conveyor_subscriber.disconnect().catch(err => console.error("Error during conveyor disconnect:", err));
     ws_server.close(() => {
         console.log('WebSocket server closed.');
         process.exit(0);
