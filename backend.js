@@ -106,6 +106,32 @@ async function subscribe_robot (_ws_server, _robot, _robot_subscribers) {
     _robot_subscribers.set(_robot.position, opcua_robot_sub);
 }
 
+async function place_random_order (_order_count) {
+    console.log("Placing random order");
+    const method_id = controller.methods[Controller.PLACE_RANDOM_ORDER];
+    const url = controller.url;
+    const client = OPCUAClient.create({});
+    let session = null;
+    try {
+        await client.connect(url);
+        session = await client.createSession();
+        for (let i = 0; i < _order_count; i++) {
+            const result = await session.call({
+                objectId: controller.instance_id,
+                methodId: method_id,
+                inputArguments: []
+            });
+            console.log("Method call result:", result);
+        }
+    } catch (err) {
+        console.error("Error calling controller method:", err);
+        reset_controller();
+    } finally {
+        if (session) await session.close();
+        await client.disconnect();
+    }
+}
+
 async function browse_servers () {
     if (interval_id)
         return;
@@ -218,47 +244,21 @@ process.on('SIGINT', async () => {
     });
 });
 
-(async () => {
-    // Start WebSocket server
-    ws_server.on('connection', function connection(ws) {
-        ws.on('message', function incoming(message) {
-            const parsed_message = JSON.parse(message);
-            console.log('received: %s', parsed_message);
-            if (parsed_message.context === Controller.PLACE_RANDOM_ORDER) {
-                console.log("Placing random order");
-                const method_id = controller.methods[Controller.PLACE_RANDOM_ORDER];
-                const url = controller.url;
 
-                (async () => {
-                    const client = OPCUAClient.create({});
-                    let session = null;
-                    try {
-                        await client.connect(url);
-                        session = await client.createSession();
-                        for (let i = 0; i < parsed_message.order_count; i++) {
-                            const result = await session.call({
-                                objectId: controller.instance_id,
-                                methodId: method_id,
-                                inputArguments: []
-                            });
-                            console.log("Method call result:", result);
-                        }
-                    } catch (err) {
-                        console.error("Error calling controller method:", err);
-                        reset_controller();
-                    } finally {
-                        if (session) await session.close();
-                        await client.disconnect();
-                    }
-                })();
-            }
-            if (parsed_message.context === "frontend_closed") {
-                console.log("Frontend closed, cleaning up...");
-                ws.close();
-            }
-        });
+// Start WebSocket server
+ws_server.on('connection', function connection(ws) {
+    ws.on('message', async function incoming(message) {
+        const parsed_message = JSON.parse(message);
+        console.log('received: %s', parsed_message);
+        if (parsed_message.context === Controller.PLACE_RANDOM_ORDER) {
+            await place_random_order(parsed_message.order_count);
+        }
+        if (parsed_message.context === "frontend_closed") {
+            console.log("Frontend closed, cleaning up...");
+            ws.close();
+        }
     });
-    // Schedule browse instance
-    browse_servers();
-})();
+});
+// Schedule browse instance
+browse_servers();
 
