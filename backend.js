@@ -161,6 +161,7 @@ async function browse_servers () {
                 }
 
                 let instance_id;
+                console.log(`Current robot subscribers: ${robot_subscribers.size}`);
                 if (robot_subscribers.size < robot_count && (instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Robot.TYPE)) !== NodeId.nullNodeId) {
                     console.log(`Robot type found on server: ${server.discoveryUrl}`);
                     const robot_server = await browse_robot_instance(server, instance_id);

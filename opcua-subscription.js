@@ -118,13 +118,21 @@ class opcua_subscriber {
         }
         this.#subscription.on("error", (err) => {
             console.error("❌ Subscription error:", err)
-            if (value_dto.type === Conveyor.TYPE) {
-                this.#remove_callbacks.get(value_dto.type)();
-            }
-            if (value_dto.type === Robot.TYPE) {
-                this.#remove_callbacks.get(value_dto.type)(value_dto.position);
-            }
+            this.call_remove_callback(value_dto);
         });
+        this.#client.on("connection_lost", () => {
+            console.error("❌ Connection lost");
+            this.call_remove_callback(value_dto);
+        });
+    }
+
+    call_remove_callback(_value_dto) {
+        if (_value_dto.type === Conveyor.TYPE) {
+            this.#remove_callbacks.get(_value_dto.type)();
+        }
+        if (_value_dto.type === Robot.TYPE) {
+            this.#remove_callbacks.get(_value_dto.type)(_value_dto.position);
+        }
     }
 
     async disconnect() {
