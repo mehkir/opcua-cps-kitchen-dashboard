@@ -238,6 +238,8 @@ const ws_server = new WebSocket.Server({ port: WS_PORT });
 // Cleanup on Ctrl+C
 process.on('SIGINT', async () => {
     console.log('🛑 Shutting down...');
+    if (interval_id)
+        clearInterval(interval_id);
     for (const robot_sub of robot_subscribers.values()) {
         robot_sub.disconnect().catch(err => console.error("Error during robot disconnect:", err));
     }
