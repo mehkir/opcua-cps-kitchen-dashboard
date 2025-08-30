@@ -16,10 +16,12 @@ class opcua_subscriber {
     #client;
     #session;
     #subscription;
+    #remove_callback_called;
     constructor(_wss, _endpoint_url, _remove_callbacks) {
         this.#wss = _wss;
         this.#endpoint_url = _endpoint_url;
         this.#remove_callbacks = _remove_callbacks;
+        this.#remove_callback_called = false;
     }
 
     async create_session() {
@@ -124,9 +126,16 @@ class opcua_subscriber {
             console.error("❌ Connection lost");
             this.call_remove_callback(value_dto);
         });
+        this.#client.on("close", () => {
+            console.error("❌ Connection closed");
+            this.call_remove_callback(value_dto);
+        });
     }
 
     call_remove_callback(_value_dto) {
+        if (this.#remove_callback_called)
+            return;
+        this.#remove_callback_called = true;
         if (_value_dto.type === Conveyor.TYPE) {
             this.#remove_callbacks.get(_value_dto.type)();
         }
