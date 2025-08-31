@@ -33,15 +33,7 @@
                 <p class="open-sans-myfont">
                     Received orders: <span id="received_orders">0</span><br>
                     Completed orders: <span id="completed_orders">0</span><br>
-                    Assigned vs. Dropped Orders: <span id="assigned_dropped">0/0</span>
-                </p>
-            </div>
-            <div class="open-sans-myfont" id="robots_status">
-                <h3 class="open-sans-myfont">Robot Status</h3>
-                <p class="open-sans-myfont">
-                    Position <span id="robot_position">1</span><br>
-                    Connectivity: <span id="robot_connectivity" style="color: red;">Offline</span><br>
-                    Capabilities: <span id="robot_capabilities">None</span>
+                    Assigned vs. Dropped: <span id="assigned_dropped">0/0</span>
                 </p>
             </div>
             <div class="open-sans-myfont" id="controller_status">
@@ -61,12 +53,14 @@
             </div>
         </div>
     </div>
-    <div class="grid-container page-content">
-        <div class="card" id="robots">
-            <h2 class="open-sans-myfont">Robot Operation</h2>
-        </div>
-        <div class="card" id="plates">
-            <h2 class="open-sans-myfont">Conveyor Load</h2>
+    <div class="card" id="positions" style="margin-top: 1em; margin-right: 1em; margin-left: 1em;">
+        <div class="grid-container" id="positions_labels">
+            <div>
+                <h2 class="open-sans-myfont">Robot Operation</h2>
+            </div>
+            <div>
+                <h2 class="open-sans-myfont">Conveyor Load</h2>
+            </div>
         </div>
     </div>
 

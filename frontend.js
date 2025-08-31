@@ -56,6 +56,8 @@ function create_robot_info_element(pos) {
 
   div.innerHTML = `
     <u>Position ${pos}</u><br>
+    Connectivity: <span id="${Robot.TYPE}-Connectivity-${pos}" style="color: red;">Offline</span><br>
+    Capabilities: <span id="${Robot.TYPE}-${Robot.CAPABILITIES}-${pos}">None</span><br>
     Recipe ID: <span id="${Robot.TYPE}-${Robot.RECIPE_ID}-${pos}">None</span><br>
     Dish name: <span id="${Robot.TYPE}-${Robot.DISH_NAME}-${pos}">None</span><br>
     Current tool: <span id="${Robot.TYPE}-${Robot.CURRENT_TOOL}-${pos}">None</span><br>
@@ -158,37 +160,41 @@ document.getElementById('setup_environment').addEventListener('keydown', functio
         const robot_count = Number(event.target.value);
         if (Number.isInteger(robot_count) && robot_count > 0) {
             console.log('Robot count submitted:', robot_count);
-            // Clear previous robots and plates
-            const robots = document.getElementById("robots");
-            const plates = document.getElementById("plates");
-            robots.innerHTML = `<h2 class="open-sans-myfont">Robot Operation</h2>`;
-            plates.innerHTML = `<h2 class="open-sans-myfont">Conveyor Load</h2>`;
+            // Clear previous positions
+            const positions = document.getElementById("positions");
+            positions.innerHTML = `<div class="grid-container page-content" id="positions_labels"></div>`;
+            const positions_labels = document.getElementById("positions_labels");
+            positions_labels.innerHTML = `<div><h2 class="open-sans-myfont">Robot Operation</h2></div>
+                                          <div></div>
+                                          <div><h2 class="open-sans-myfont">Conveyor Load</h2></div>`;
             for (let position = 1; position <= robot_count; position++) {
                 // Create and append robot info element
-                const robot_grid = create_grid_container();
+                const robot_conveyor_grid = create_grid_container();
                 const robot = create_robot_info_element(position);
-                robot_grid.appendChild(robot);
+                robot_conveyor_grid.appendChild(robot);
                 // Create and append gauge info element
                 const gauge = create_gauge(position);
                 gauge.style.width = "15em";
-                gauge.style.height = "10em";
-                gauge.style.padding = "0em";
-                robot_grid.appendChild(gauge);
-                robots.appendChild(robot_grid);
+                // gauge.style.height = "10em";
+                robot_conveyor_grid.appendChild(gauge);
+                positions.appendChild(robot_conveyor_grid);
                 gauge_objects[position] = new JustGage({
                     id: `${Robot.TYPE}-${Robot.OVERALL_TIME}-${position}`,
                     value: 0,
                     min: 0,
                     max: 100,
-                    label: "units"
+                    label: "Time Utilization"
                 });
                 // Create and append plate info element
                 const plate = create_plate_info_element(position, `Position ${position}`);
-                plates.appendChild(plate);
+                robot_conveyor_grid.appendChild(plate);
             }
-            // Create and append plate info element
+            // Create and append output plate info element
+            const robot_conveyor_grid = create_grid_container();
+            robot_conveyor_grid.innerHTML =`<div></div><div></div>`;
             const plate = create_plate_info_element(0, `OUTPUT`);
-            plates.appendChild(plate);
+            robot_conveyor_grid.appendChild(plate);
+            positions.appendChild(robot_conveyor_grid);
         } else {
             alert('Please enter a positive integer.');
         }

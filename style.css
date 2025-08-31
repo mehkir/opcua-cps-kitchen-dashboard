@@ -55,19 +55,10 @@ h2 {
 }
 
 /* Ab 30em: gleich breite Spalten */
-@media (min-width: 30em) {
+@media (min-width: 15em) {
   .grid-container {
-    grid-template-columns: repeat(auto-fit, minmax(10em, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(15em, 1fr));
   }
-}
-
-
-#plates > :nth-child(2) {
-  margin-top: 2em;
-}
-
-#plates > :nth-child(n+3) {
-  margin-top: 6em;
 }
 
 .function-button {
