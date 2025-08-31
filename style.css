@@ -43,10 +43,10 @@ h2 {
 }
 
 /* Optional: subtle hover effect */
-.card:hover {
+/* .card:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
-}
+} */
 
 .grid-container {
   display: grid;
@@ -57,17 +57,17 @@ h2 {
 /* Ab 30em: gleich breite Spalten */
 @media (min-width: 30em) {
   .grid-container {
-    grid-template-columns: repeat(auto-fit, minmax(20em, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(10em, 1fr));
   }
 }
 
-#robots > :nth-child(n+3),
-#gauges > :nth-child(n+3) {
+
+#plates > :nth-child(2) {
   margin-top: 2em;
 }
 
 #plates > :nth-child(n+3) {
-  margin-top: 5em;
+  margin-top: 6em;
 }
 
 .function-button {

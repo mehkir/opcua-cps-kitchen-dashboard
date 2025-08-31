@@ -11,27 +11,62 @@
 </head>
 <body>
     <h1 class="open-sans-myfont banner" id="banner">CPS-Kitchen</h1>
-    <div class="grid-container page-content">
-        <div class="card" id="functions">
-            <h2 class="open-sans-myfont">Functions</h2>
-            <p class="text-field-filled">
+    <div class="card" id="functions" style="margin-top: 1em; margin-right: 1em; margin-left: 1em;">
+        <h2 class="open-sans-myfont">Functions</h2>
+        <div class="grid-container">
+            <div class="text-field-filled">
                 <label class="text-field-label open-sans-myfont" for="setup_environment">SETUP ENVIRONMENT</label>
                 <input class="text-field-input open-sans-myfont" id="setup_environment" type="number" placeholder="Type and press Enter">
-            </p>
-            <p><button id="random_order_button" type="button" class="open-sans-myfont function-button">PLACE RANDOM ORDER</button></p>
-            <p class="text-field-filled">
+            </div>
+            <!-- <div><button id="random_order_button" type="button" class="open-sans-myfont function-button">PLACE RANDOM ORDER</button></div> -->
+            <div class="text-field-filled">
                 <label class="text-field-label open-sans-myfont" for="random_order_input">PLACE RANDOM ORDER/S</label>
                 <input class="text-field-input open-sans-myfont" id="random_order_input" type="number" placeholder="Type and press Enter">
-            </p>
+            </div>
         </div>
+    </div>
+    <div class="card" id="kitchen" style="margin-top: 1em; margin-right: 1em; margin-left: 1em;">
+        <h2 class="open-sans-myfont">Kitchen Environment</h2>
+        <div class="grid-container">
+            <div class="open-sans-myfont" id="orders">
+                <h3 class="open-sans-myfont">Orders</h3>
+                <p class="open-sans-myfont">
+                    Received orders: <span id="received_orders">0</span><br>
+                    Completed orders: <span id="completed_orders">0</span><br>
+                    Assigned vs. Dropped Orders: <span id="assigned_dropped">0/0</span>
+                </p>
+            </div>
+            <div class="open-sans-myfont" id="robots_status">
+                <h3 class="open-sans-myfont">Robot Status</h3>
+                <p class="open-sans-myfont">
+                    Position <span id="robot_position">1</span><br>
+                    Connectivity: <span id="robot_connectivity" style="color: red;">Offline</span><br>
+                    Capabilities: <span id="robot_capabilities">None</span>
+                </p>
+            </div>
+            <div class="open-sans-myfont" id="controller_status">
+                <h3 class="open-sans-myfont">Controller Status</h3>
+                <p class="open-sans-myfont">
+                    Connectivity: <span id="controller_connectivity" style="color: red;">Offline</span><br>
+                    Registered Robots: <span id="registered_robots">0</span>
+                </p>
+            </div>
+            <div class="open-sans-myfont" id="conveyor_status">
+                <h3 class="open-sans-myfont">Conveyor Status</h3>
+                <p class="open-sans-myfont">
+                    Connectivity: <span id="conveyor_connectivity" style="color: red;">Offline</span><br>
+                    Total Positions/Plates: <span id="plates_count">0</span><br>
+                    Free vs. Occupied Plates: <span id="free_occupied">0/0</span>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="grid-container page-content">
         <div class="card" id="robots">
-            <h2 class="open-sans-myfont">Robots</h2>
-        </div>
-        <div class="card" id="gauges">
-            <h2 class="open-sans-myfont">Robots Overall Time</h2>
+            <h2 class="open-sans-myfont">Robot Operation</h2>
         </div>
         <div class="card" id="plates">
-            <h2 class="open-sans-myfont">Conveyor</h2>
+            <h2 class="open-sans-myfont">Conveyor Load</h2>
         </div>
     </div>
 

@@ -43,21 +43,27 @@ const Controller = {
 
 const gauge_objects = {};
 
-function create_robot_info_element(pos) {
-  const p = document.createElement('p');
-  p.className = 'open-sans-myfont';
-  p.id = `robot-${pos}`;
+function create_grid_container() {
+  const grid = document.createElement('div');
+  grid.className = 'grid-container page-content';
+  return grid;
+}
 
-  p.innerHTML = `
-    <span style="display: block; text-align: center;">Pos ${pos}</span><br>
-    Recipe ID: <span id="${Robot.TYPE}-${Robot.RECIPE_ID}-${pos}">None</span> <br>
-    Dish name: <span id="${Robot.TYPE}-${Robot.DISH_NAME}-${pos}">None</span> <br>
-    Current tool: <span id="${Robot.TYPE}-${Robot.CURRENT_TOOL}-${pos}">None</span> <br>
-    Action: <span id="${Robot.TYPE}-${Robot.ACTION_NAME}-${pos}">None</span> <br>
+function create_robot_info_element(pos) {
+  const div = document.createElement('div');
+  div.className = 'open-sans-myfont';
+  div.id = `robot-${pos}`;
+
+  div.innerHTML = `
+    <u>Position ${pos}</u><br>
+    Recipe ID: <span id="${Robot.TYPE}-${Robot.RECIPE_ID}-${pos}">None</span><br>
+    Dish name: <span id="${Robot.TYPE}-${Robot.DISH_NAME}-${pos}">None</span><br>
+    Current tool: <span id="${Robot.TYPE}-${Robot.CURRENT_TOOL}-${pos}">None</span><br>
+    Action: <span id="${Robot.TYPE}-${Robot.ACTION_NAME}-${pos}">None</span><br>
     Ingredients: <span id="${Robot.TYPE}-${Robot.INGREDIENTS}-${pos}">None</span>
   `;
 
-  return p;
+  return div;
 }
 
 function update_robot_info_element(data) {
@@ -103,18 +109,18 @@ function create_gauge(pos) {
 }
 
 function create_plate_info_element(pos, label) {
-    const p = document.createElement('p');
-    p.className = 'open-sans-myfont';
-    p.id = `plate-${pos}`;
+    const div = document.createElement('div');
+    div.className = 'open-sans-myfont';
+    div.id = `plate-${pos}`;
 
-    p.innerHTML = `
-        <span style="display: block; text-align: center;">${label}</span><br>
-        ID: <span id="${Conveyor.TYPE}-${Conveyor.PLATE_ID}-${pos}">None</span> <br>
-        Recipe ID: <span id="${Conveyor.TYPE}-${Conveyor.PLATE_RECIPE_ID}-${pos}">None</span> <br>
+    div.innerHTML = `
+        <u>${label}</u><br>
+        ID: <span id="${Conveyor.TYPE}-${Conveyor.PLATE_ID}-${pos}">None</span><br>
+        Recipe ID: <span id="${Conveyor.TYPE}-${Conveyor.PLATE_RECIPE_ID}-${pos}">None</span><br>
         Occupied: <span id="${Conveyor.TYPE}-${Conveyor.PLATE_OCCUPIED}-${pos}">None</span>
     `;
 
-    return p;
+    return div;
 }
 
 function handle_received_data(value) {
@@ -152,20 +158,23 @@ document.getElementById('setup_environment').addEventListener('keydown', functio
         const robot_count = Number(event.target.value);
         if (Number.isInteger(robot_count) && robot_count > 0) {
             console.log('Robot count submitted:', robot_count);
-            // Clear previous robots, gauges and plates
+            // Clear previous robots and plates
             const robots = document.getElementById("robots");
-            const gauges = document.getElementById("gauges");
             const plates = document.getElementById("plates");
-            robots.innerHTML = `<h2 class="open-sans-myfont">Robots</h2>`;
-            gauges.innerHTML = `<h2 class="open-sans-myfont">Robots Overall Time</h2>`;
-            plates.innerHTML = `<h2 class="open-sans-myfont">Conveyor</h2>`;
+            robots.innerHTML = `<h2 class="open-sans-myfont">Robot Operation</h2>`;
+            plates.innerHTML = `<h2 class="open-sans-myfont">Conveyor Load</h2>`;
             for (let position = 1; position <= robot_count; position++) {
                 // Create and append robot info element
+                const robot_grid = create_grid_container();
                 const robot = create_robot_info_element(position);
-                robots.appendChild(robot);
+                robot_grid.appendChild(robot);
                 // Create and append gauge info element
                 const gauge = create_gauge(position);
-                gauges.appendChild(gauge);
+                gauge.style.width = "15em";
+                gauge.style.height = "10em";
+                gauge.style.padding = "0em";
+                robot_grid.appendChild(gauge);
+                robots.appendChild(robot_grid);
                 gauge_objects[position] = new JustGage({
                     id: `${Robot.TYPE}-${Robot.OVERALL_TIME}-${position}`,
                     value: 0,
@@ -174,7 +183,7 @@ document.getElementById('setup_environment').addEventListener('keydown', functio
                     label: "units"
                 });
                 // Create and append plate info element
-                const plate = create_plate_info_element(position, `Pos ${position}`);
+                const plate = create_plate_info_element(position, `Position ${position}`);
                 plates.appendChild(plate);
             }
             // Create and append plate info element
@@ -187,15 +196,15 @@ document.getElementById('setup_environment').addEventListener('keydown', functio
     }
 });
 
-document.getElementById('random_order_button').onclick = call_random_order_method;
-function call_random_order_method() {
-    dto = {
-        context: Controller.PLACE_RANDOM_ORDER,
-        order_count: 1
-    }
-    console.log("Placing random order");
-    ws.send(JSON.stringify(dto));
-}
+// document.getElementById('random_order_button').onclick = call_random_order_method;
+// function call_random_order_method() {
+//     dto = {
+//         context: Controller.PLACE_RANDOM_ORDER,
+//         order_count: 1
+//     }
+//     console.log("Placing random order");
+//     ws.send(JSON.stringify(dto));
+// }
 
 document.getElementById('random_order_input').addEventListener('keydown', function(event) {
     if (event.key === 'Enter') {
