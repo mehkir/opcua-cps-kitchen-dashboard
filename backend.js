@@ -21,16 +21,13 @@ async function read_attribute_value(_server_url, _node_id) {
 }
 
 async function browse_robot_instance(_server, _instance_id) {
+    const robot_server = { attributes : {} };
     const opcua_browser_instance = new opcua_browser();
     const browse_attributes_result = await opcua_browser_instance.browse_attributes(_server.discoveryUrl, _instance_id);
-    const robot_server = {
-        attributes : {}
-    };
     for (const attr of browse_attributes_result.references) {
         console.log(`Robot attribute: ${attr.browseName.name} (${attr.nodeId.toString()})`);
         if (attr.browseName.name === Robot.POSITION) {
             robot_server.position = await read_attribute_value(_server.discoveryUrl, attr.nodeId);
-            continue;
         }
         robot_server.attributes[attr.browseName.name] = attr.nodeId;
     }
@@ -71,6 +68,53 @@ async function browse_controller_instance (_server, _instance_id) {
     }
     controller.url = _server.discoveryUrl;
     return controller;
+}
+
+async function browse_kitchen_instance (_server, _instance_id) {
+    const kitchen = { 
+        methods: {},
+        remote_controller_attributes: {},
+        remote_conveyor_attributes: {},
+        remote_robots: new Map()
+    };
+    const opcua_browser_instance = new opcua_browser();
+    const browse_methods_result = await opcua_browser_instance.browse_methods(_server.discoveryUrl, _instance_id);
+    kitchen.instance_id = _instance_id;
+    for (const method of browse_methods_result.references) {
+        console.log(`Kitchen method: ${method.browseName.name} (${method.nodeId.toString()})`);
+        kitchen.methods[method.browseName.name] = method.nodeId;
+    }
+    const browse_objects_result = await opcua_browser_instance.browse_objects(_server.discoveryUrl, _instance_id, resolveNodeId("HasComponent"));
+    for (const obj of browse_objects_result.references) {
+        console.log(`Kitchen object: ${obj.browseName.name} (${obj.nodeId.toString()})`);
+        if (obj.typeDefinition.toString() === Controller.REMOTE_TYPE) {
+            const browse_attributes_result = await opcua_browser_instance.browse_attributes(_server.discoveryUrl, obj.nodeId);
+            for (const attr of browse_attributes_result.references) {
+                console.log(`Remote controller attribute: ${attr.browseName.name} (${attr.nodeId.toString()})`);
+                kitchen.remote_controller_attributes[attr.browseName.name] = attr.nodeId;
+            }
+        }
+        if (obj.typeDefinition.toString() === Conveyor.REMOTE_TYPE) {
+            const browse_attributes_result = await opcua_browser_instance.browse_attributes(_server.discoveryUrl, obj.nodeId);
+            for (const attr of browse_attributes_result.references) {
+                console.log(`Remote conveyor attribute: ${attr.browseName.name} (${attr.nodeId.toString()})`);
+                kitchen.remote_conveyor_attributes[attr.browseName.name] = attr.nodeId;
+            }
+        }
+        if (obj.typeDefinition.toString() === Robot.REMOTE_TYPE) {
+            const remote_robot_attributes = {};
+            const browse_attributes_result = await opcua_browser_instance.browse_attributes(_server.discoveryUrl, obj.nodeId);
+            for (const attr of browse_attributes_result.references) {
+                console.log(`Remote robot attribute: ${attr.browseName.name} (${attr.nodeId.toString()})`);
+                if (attr.browseName.name === Robot.POSITION) {
+                    remote_robot_attributes.position = await read_attribute_value(_server.discoveryUrl, attr.nodeId);
+                }
+                remote_robot_attributes[attr.browseName.name] = attr.nodeId;
+            }
+            kitchen.remote_robots.set(remote_robot_attributes.position, remote_robot_attributes);
+        }
+    }
+    return kitchen;
 }
 
 async function subscribe_conveyor (_conveyor) {
@@ -136,7 +180,7 @@ async function place_random_order (_order_count) {
 }
 
 async function browse_servers () {
-    if (interval_id)
+    if (interval_id || shutting_down)
         return;
 
     const opcua_browser_instance = new opcua_browser();
@@ -186,7 +230,7 @@ async function browse_servers () {
 }
 
 function is_run_browsing() {
-    return controller === null || robot_subscribers.size < robot_count || conveyor_subscriber === null;
+    return controller === null || robot_subscribers.size < robot_count || conveyor_subscriber === null || kitchen_subscriber === null;
 }
 
 function remove_robot_subscriber(_position) {
@@ -202,6 +246,14 @@ function remove_conveyor_subscriber() {
     if (conveyor_subscriber) {
         conveyor_subscriber.disconnect().catch(err => console.error("Error during conveyor disconnect:", err));
         conveyor_subscriber = null;
+    }
+    browse_servers();
+}
+
+function remove_kitchen_subscriber() {
+    if (kitchen_subscriber) {
+        kitchen_subscriber.disconnect().catch(err => console.error("Error during kitchen disconnect:", err));
+        kitchen_subscriber = null;
     }
     browse_servers();
 }
@@ -229,15 +281,18 @@ const remove_callbacks = new Map();
 remove_callbacks.set(Robot.TYPE, remove_robot_subscriber);
 remove_callbacks.set(Conveyor.TYPE, remove_conveyor_subscriber);
 
+let shutting_down = false;
 let interval_id = null;
 let controller = null;
 const robot_subscribers = new Map();
 let conveyor_subscriber = null;
+let kitchen_subscriber = null;
 
 const ws_server = new WebSocket.Server({ port: WS_PORT });
 // Cleanup on Ctrl+C
 process.on('SIGINT', async () => {
     console.log('🛑 Shutting down...');
+    shutting_down = true;
     if (interval_id)
         clearInterval(interval_id);
     for (const robot_sub of robot_subscribers.values()) {
