@@ -1,11 +1,12 @@
 /* ROBOT */
 const Robot = {
-    // object type node
+    // object type nodes
     TYPE : "RobotType",
+    REMOTE_TYPE : "RemoteRobotType",
     // method nodes
     RECEIVE_TASK : "ReceiveTask",
     HANDOVER_FINISHED_ORDER : "HandoverFinishedOrder",
-    // information nodes
+    // attribute nodes
     POSITION : "Position",
     RECIPE_ID : "RecipeId",
     DISH_NAME : "DishName",
@@ -19,8 +20,9 @@ const Robot = {
 
 /* CONVEYOR */
 const Conveyor = {
-    // object type node
+    // object type nodes
     TYPE : "ConveyorType",
+    REMOTE_TYPE : "RemoteConveyorType",
     PLATE_TYPE : "PlateType",
     // plate information nodes
     PLATE_ID : "Id",
@@ -35,10 +37,24 @@ const Conveyor = {
 const Controller = {
     // object type node
     TYPE : "ControllerType",
+    REMOTE_TYPE : "RemoteControllerType",
     // method nodes
     REGISTER_ROBOT : "RegisterRobot",
-    CHOOSE_NEXT_ROBOT : "ChooseNextRobot",
-    PLACE_RANDOM_ORDER : "PlaceRandomOrder"
+    CHOOSE_NEXT_ROBOT : "ChooseNextRobot"
+};
+
+/* KITCHEN */
+const Kitchen = {
+    // object type node
+    TYPE : "KitchenType",
+    // method nodes
+    PLACE_RANDOM_ORDER : "PlaceRandomOrder",
+    // attribute nodes
+    CONNECTIVITY : "Connectivity",
+    RECEIVED_ORDERS : "ReceivedOrders",
+    ASSIGNED_ORDERS : "AssignedOrders",
+    DROPPED_ORDERS : "DroppedOrders",
+    COMPLETED_ORDERS : "CompletedOrders"
 };
 
 const gauge_objects = {};
