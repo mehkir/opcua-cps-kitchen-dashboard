@@ -114,6 +114,7 @@ async function browse_kitchen_instance (_server, _instance_id) {
             kitchen.remote_robots.set(remote_robot_attributes.position, remote_robot_attributes);
         }
     }
+    kitchen.url = _server.discoveryUrl;
     return kitchen;
 }
 
@@ -153,10 +154,43 @@ async function subscribe_robot (_robot) {
     robot_subscribers.set(_robot.position, opcua_robot_sub);
 }
 
+async function subscribe_kitchen (_kitchen) {
+    kitchen_subscriber = new opcua_subscriber(ws_server, _kitchen.url, remove_callbacks);
+    await kitchen_subscriber.create_session();
+    await kitchen_subscriber.create_subscription();
+    for (const [browse_name, attribute_id] of Object.entries(_kitchen.remote_controller_attributes)) {
+        const remote_controller_monitor = {
+            type: Controller.REMOTE_TYPE,
+            attribute_name: browse_name
+        };
+        console.log(`Subscribing to remote controller attribute ${browse_name}`);
+        await kitchen_subscriber.subscribe(attribute_id, remote_controller_monitor);
+    }
+    for (const [browse_name, attribute_id] of Object.entries(_kitchen.remote_conveyor_attributes)) {
+        const remote_conveyor_monitor = {
+            type: Conveyor.REMOTE_TYPE,
+            attribute_name: browse_name
+        };
+        console.log(`Subscribing to remote conveyor attribute ${browse_name}`);
+        await kitchen_subscriber.subscribe(attribute_id, remote_conveyor_monitor);
+    }
+    _kitchen.remote_robots.forEach(async (remote_robot, position) => {
+        for (const [browse_name, attribute_id] of Object.entries(remote_robot)) {
+            const remote_robot_monitor = {
+                type: Robot.REMOTE_TYPE,
+                position: position,
+                attribute_name: browse_name
+            };
+            console.log(`Subscribing to remote robot attribute ${browse_name} at position ${position}`);
+            await kitchen_subscriber.subscribe(attribute_id, remote_robot_monitor);
+        }
+    });
+}
+
 async function place_random_order (_order_count) {
     console.log("Placing random order");
-    const method_id = controller.methods[Controller.PLACE_RANDOM_ORDER];
-    const url = controller.url;
+    const method_id = kitchen.methods[Kitchen.PLACE_RANDOM_ORDER];
+    const url = kitchen.url;
     const client = OPCUAClient.create({});
     let session = null;
     try {
@@ -164,15 +198,15 @@ async function place_random_order (_order_count) {
         session = await client.createSession();
         for (let i = 0; i < _order_count; i++) {
             const result = await session.call({
-                objectId: controller.instance_id,
+                objectId: kitchen.instance_id,
                 methodId: method_id,
                 inputArguments: []
             });
             console.log("Method call result:", result);
         }
     } catch (err) {
-        console.error("Error calling controller method:", err);
-        reset_controller();
+        console.error("Error calling kitchen method:", err);
+        // reset_controller(); TODO: adapt for kitchen and kitchen subscriber
     } finally {
         if (session) await session.close();
         await client.disconnect();
@@ -223,6 +257,12 @@ async function browse_servers () {
                     console.log(`Controller type found on server: ${server.discoveryUrl}`);
                     controller = await browse_controller_instance(server, instance_id);
                 }
+
+                if (kitchen_subscriber === null && (instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Kitchen.TYPE)) !== NodeId.nullNodeId) {
+                    console.log(`Kitchen type found on server: ${server.discoveryUrl}`);
+                    kitchen = await browse_kitchen_instance(server, instance_id);
+                    await subscribe_kitchen(kitchen);
+                }
             }
         }
         console.log("Browsing ...");
@@ -254,6 +294,7 @@ function remove_kitchen_subscriber() {
     if (kitchen_subscriber) {
         kitchen_subscriber.disconnect().catch(err => console.error("Error during kitchen disconnect:", err));
         kitchen_subscriber = null;
+        kitchen = null;
     }
     browse_servers();
 }
@@ -265,9 +306,7 @@ function reset_controller() {
     browse_servers();
 }
 
-program
-  .option("-rc, --robot-count <number>", "Number of robots to simulate")
-
+program.option("-rc, --robot-count <number>", "Number of robots to simulate");
 program.parse(process.argv);
 const options = program.opts();
 const robot_count = Number(options.robotCount);
@@ -280,12 +319,14 @@ console.log("Robot Count:", robot_count);
 const remove_callbacks = new Map();
 remove_callbacks.set(Robot.TYPE, remove_robot_subscriber);
 remove_callbacks.set(Conveyor.TYPE, remove_conveyor_subscriber);
+remove_callbacks.set(Kitchen.TYPE, remove_kitchen_subscriber);
 
 let shutting_down = false;
 let interval_id = null;
 let controller = null;
 const robot_subscribers = new Map();
 let conveyor_subscriber = null;
+let kitchen = null;
 let kitchen_subscriber = null;
 
 const ws_server = new WebSocket.Server({ port: WS_PORT });
@@ -300,6 +341,8 @@ process.on('SIGINT', async () => {
     }
     if (conveyor_subscriber)
         await conveyor_subscriber.disconnect().catch(err => console.error("Error during conveyor disconnect:", err));
+    if (kitchen_subscriber)
+        await kitchen_subscriber.disconnect().catch(err => console.error("Error during kitchen disconnect:", err));
     ws_server.close(() => {
         console.log('WebSocket server closed.');
         process.exit(0);
