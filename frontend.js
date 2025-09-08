@@ -234,7 +234,7 @@ document.getElementById('random_order_input').addEventListener('keydown', functi
         if (Number.isInteger(order_count) && order_count > 0) {
             console.log('Order count submitted:', order_count);
             dto = {
-                context: Controller.PLACE_RANDOM_ORDER,
+                context: Kitchen.PLACE_RANDOM_ORDER,
                 order_count: order_count
             };
             console.log("Placing random order with count:", order_count);
