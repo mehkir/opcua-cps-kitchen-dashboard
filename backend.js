@@ -355,7 +355,7 @@ ws_server.on('connection', function connection(ws_connection) {
     ws_connection.on('message', async function incoming(message) {
         const parsed_message = JSON.parse(message);
         console.log('received: %s', parsed_message);
-        if (parsed_message.context === Controller.PLACE_RANDOM_ORDER) {
+        if (parsed_message.context === Kitchen.PLACE_RANDOM_ORDER) {
             await place_random_order(parsed_message.order_count);
         }
         if (parsed_message.context === "frontend_closed") {
