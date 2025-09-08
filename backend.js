@@ -1,7 +1,7 @@
 const DISCOVERY_URL = "opc.tcp://localhost:4840";
 const WS_PORT = 8080;
 const my_module = require('./my-addons/my_module.node');
-const { Robot, Conveyor, Controller } = require('./browsenames');
+const { Robot, Conveyor, Controller, Kitchen } = require('./browsenames');
 const { ApplicationType, NodeId, OPCUAClient, resolveNodeId } = require("node-opcua");
 const opcua_browser = require('./opcua-browser.js');
 const opcua_subscriber = require('./opcua-subscription.js');
