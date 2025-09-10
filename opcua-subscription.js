@@ -103,8 +103,7 @@ class opcua_subscriber {
                     }
                     // Update the changed conveyor attribute
                     value_dto[value_dto.attribute_name] = value;
-                }
-                if (value_dto.type === Robot.TYPE) {
+                } else {
                     value_dto.value = value;
                 }
 

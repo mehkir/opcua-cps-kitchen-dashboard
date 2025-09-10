@@ -72,7 +72,7 @@ function create_robot_info_element(pos) {
 
   div.innerHTML = `
     <u>Position ${pos}</u><br>
-    Connectivity: <span id="${Robot.TYPE}-Connectivity-${pos}" style="color: red;">Offline</span><br>
+    Connectivity: <span id="${Robot.TYPE}-${Kitchen.CONNECTIVITY}-${pos}" style="color: red;">Offline</span><br>
     Capabilities: <span id="${Robot.TYPE}-${Robot.CAPABILITIES}-${pos}">None</span><br>
     Recipe ID: <span id="${Robot.TYPE}-${Robot.RECIPE_ID}-${pos}">None</span><br>
     Dish name: <span id="${Robot.TYPE}-${Robot.DISH_NAME}-${pos}">None</span><br>
@@ -120,6 +120,13 @@ function update_conveyor_info_element(data) {
     set_if_exists(data);
 }
 
+function update_kitchen_info_element(data) {
+    const el = document.getElementById(`${Kitchen.TYPE}-${data.attribute_name}-0`);
+    if (el && data.value !== undefined && data.value !== null && data.value !== '') {
+        el.textContent = data.value.toString();
+    }
+}
+
 function create_gauge(pos) {
     const div = document.createElement('div');
     div.id = `${Robot.TYPE}-${Robot.OVERALL_TIME}-${pos}`;
@@ -148,6 +155,18 @@ function handle_received_data(value) {
     }
     if (value.type === Conveyor.TYPE) {
         update_conveyor_info_element(value);
+    }
+    if (value.type === Kitchen.TYPE) {
+        update_kitchen_info_element(value);
+    }
+    if (value.type === Controller.REMOTE_TYPE) {
+        // Currently no UI elements for controller attributes
+    }
+    if (value.type === Conveyor.REMOTE_TYPE) {
+        // Currently no UI elements for remote conveyor attributes
+    }
+    if (value.type === Robot.REMOTE_TYPE) {
+        // Currently no UI elements for remote robot attributes
     }
 }
 
