@@ -73,6 +73,7 @@ async function browse_controller_instance (_server, _instance_id) {
 async function browse_kitchen_instance (_server, _instance_id) {
     const kitchen = { 
         methods: {},
+        attributes: {},
         remote_controller_attributes: {},
         remote_conveyor_attributes: {},
         remote_robots: new Map()
@@ -112,6 +113,13 @@ async function browse_kitchen_instance (_server, _instance_id) {
                 remote_robot_attributes[attr.browseName.name] = attr.nodeId;
             }
             kitchen.remote_robots.set(remote_robot_attributes.position, remote_robot_attributes);
+        }
+        if (obj.typeDefinition.toString() === Kitchen.TYPE) {
+            const browse_attributes_result = await opcua_browser_instance.browse_attributes(_server.discoveryUrl, obj.nodeId);
+            for (const attr of browse_attributes_result.references) {
+                console.log(`Kitchen attribute: ${attr.browseName.name} (${attr.nodeId.toString()})`);
+                kitchen.attributes[attr.browseName.name] = attr.nodeId;
+            }
         }
     }
     kitchen.url = _server.discoveryUrl;
@@ -185,6 +193,14 @@ async function subscribe_kitchen (_kitchen) {
             await kitchen_subscriber.subscribe(attribute_id, remote_robot_monitor);
         }
     });
+    for (const [browse_name, attribute_id] of Object.entries(_kitchen.attributes)) {
+        const kitchen_monitor = {
+            type: Kitchen.TYPE,
+            attribute_name: browse_name
+        };
+        console.log(`Subscribing to kitchen attribute ${browse_name}`);
+        await kitchen_subscriber.subscribe(attribute_id, kitchen_monitor);
+    }
 }
 
 async function place_random_order (_order_count) {
