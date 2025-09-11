@@ -110,6 +110,18 @@ function update_conveyor_info_element(data) {
 }
 
 function update_kitchen_info_element(data) {
+    switch (data.type) {
+        case Controller.REMOTE_TYPE:
+            break;
+        case Conveyor.REMOTE_TYPE:
+            break;
+        case Robot.REMOTE_TYPE:
+            break;
+        case Kitchen.TYPE:
+            break;
+        default:
+            break;
+    }
     const el = document.getElementById(`${Kitchen.TYPE}-${data.attribute_name}-0`);
     if (el && data.value !== undefined && data.value !== null && data.value !== '') {
         el.textContent = data.value.toString();
