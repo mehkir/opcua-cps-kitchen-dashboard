@@ -100,24 +100,13 @@ function update_robot_info_element(data) {
 }
 
 function update_conveyor_info_element(data) {
-    const set_if_exists = (data) => {
-        const id_el = document.getElementById(`${data.type}-${Conveyor.PLATE_ID}-${data[Conveyor.PLATE_POSITION]}`);
-        const new_id = data.id;
-        if (id_el && new_id !== undefined && new_id !== null && new_id !== '') {
-            id_el.textContent = new_id.toString();
-        }
-        const recipe_el = document.getElementById(`${data.type}-${Conveyor.PLATE_RECIPE_ID}-${data[Conveyor.PLATE_POSITION]}`);
-        const new_recipe = data[Conveyor.PLATE_RECIPE_ID];
-        if (recipe_el && new_recipe !== undefined && new_recipe !== null && new_recipe !== '') {
-            recipe_el.textContent = new_recipe.toString();
-        }
-        const occupied_el = document.getElementById(`${data.type}-${Conveyor.PLATE_OCCUPIED}-${data[Conveyor.PLATE_POSITION]}`);
-        const new_occupied = data[Conveyor.PLATE_OCCUPIED];
-        if (occupied_el && new_occupied !== undefined && new_occupied !== null && new_occupied !== '') {
-            occupied_el.textContent = new_occupied.toString();
+    const set_if_exists = (type, attribute_name, position, value) => {
+        const el = document.getElementById(`${type}-${attribute_name}-${position}}`);
+        if (el && value !== undefined && value !== null && value !== '') {
+            el.textContent = value.toString();
         }
     };
-    set_if_exists(data);
+    set_if_exists(data.type, Conveyor.PLATE_ID, data[Conveyor.PLATE_POSITION], data[Conveyor.PLATE_ID]);
 }
 
 function update_kitchen_info_element(data) {
