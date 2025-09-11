@@ -46,12 +46,12 @@ async function browse_conveyor_instance(_server, _instance_id) {
         for (const attr of browse_attributes_result.references) {
             console.log(`Plate attribute: ${attr.browseName.name} (${attr.nodeId.toString()})`);
             if (attr.browseName.name === Conveyor.PLATE_ID) {
-                plate_attributes.id = await read_attribute_value(_server.discoveryUrl, attr.nodeId);
+                plate_attributes[Conveyor.PLATE_ID] = await read_attribute_value(_server.discoveryUrl, attr.nodeId);
                 continue;
             }
             plate_attributes[attr.browseName.name] = attr.nodeId;
         }
-        conveyor.plates.set(plate_attributes.id, plate_attributes);
+        conveyor.plates.set(plate_attributes[Conveyor.PLATE_ID], plate_attributes);
     }
     conveyor.url = _server.discoveryUrl;
     return conveyor;
@@ -132,9 +132,11 @@ async function subscribe_conveyor (_conveyor) {
     await conveyor_subscriber.create_subscription();
     _conveyor.plates.forEach(async (plate, id) => {
         for (const [browse_name, attribute_id] of Object.entries(plate)) {
+            if (browse_name === Conveyor.PLATE_ID)
+                continue;
             const plate_monitor = {
                 type: Conveyor.TYPE,
-                id: id,
+                [Conveyor.PLATE_ID]: id,
                 [Conveyor.PLATE_POSITION + "Id"]: plate[Conveyor.PLATE_POSITION],
                 [Conveyor.PLATE_RECIPE_ID + "Id"]: plate[Conveyor.PLATE_RECIPE_ID],
                 [Conveyor.PLATE_OCCUPIED + "Id"]: plate[Conveyor.PLATE_OCCUPIED],
