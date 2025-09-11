@@ -135,9 +135,9 @@ async function subscribe_conveyor (_conveyor) {
             const plate_monitor = {
                 type: Conveyor.TYPE,
                 id: id,
-                position_id: plate[Conveyor.PLATE_POSITION],
-                recipe_id: plate[Conveyor.PLATE_RECIPE_ID],
-                occupied_id: plate[Conveyor.PLATE_OCCUPIED],
+                [Conveyor.PLATE_POSITION + "Id"]: plate[Conveyor.PLATE_POSITION],
+                [Conveyor.PLATE_RECIPE_ID + "Id"]: plate[Conveyor.PLATE_RECIPE_ID],
+                [Conveyor.PLATE_OCCUPIED + "Id"]: plate[Conveyor.PLATE_OCCUPIED],
                 attribute_name: browse_name
             };
             console.log(`Subscribing to conveyor plate attribute ${browse_name} of plate ${id}`);

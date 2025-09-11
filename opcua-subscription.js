@@ -81,26 +81,11 @@ class opcua_subscriber {
                 console.log(`🔄 Attribute ${value_dto.attribute_name} changed:`, value);
                 if (value_dto.type === Conveyor.TYPE) {
                     // Read plate position
-                    if (value_dto.attribute_name !== Conveyor.PLATE_POSITION) {
-                        let position_data = await this.#session.read({
-                            nodeId: value_dto.position_id
-                        });
-                        value_dto[Conveyor.PLATE_POSITION] = position_data.value.value;
-                    }
+                    await this.add_attribute_value_if_not_contained(Conveyor.PLATE_POSITION, value_dto);
                     // Read plate recipe
-                    if (value_dto.attribute_name !== Conveyor.PLATE_RECIPE_ID) {
-                        let recipe_data = await this.#session.read({
-                            nodeId: value_dto.recipe_id
-                        });
-                        value_dto[Conveyor.PLATE_RECIPE_ID] = recipe_data.value.value;
-                    }
+                    await this.add_attribute_value_if_not_contained(Conveyor.PLATE_RECIPE_ID, value_dto);
                     // Read plate occupied status
-                    if (value_dto.attribute_name !== Conveyor.PLATE_OCCUPIED) {
-                        let occupied_data = await this.#session.read({
-                            nodeId: value_dto.occupied_id
-                        });
-                        value_dto[Conveyor.PLATE_OCCUPIED] = occupied_data.value.value;  
-                    }
+                    await this.add_attribute_value_if_not_contained(Conveyor.PLATE_OCCUPIED, value_dto);
                     // Update the changed conveyor attribute
                     value_dto[value_dto.attribute_name] = value;
                 } else {
@@ -129,6 +114,15 @@ class opcua_subscriber {
             console.error("❌ Connection closed");
             this.call_remove_callback(value_dto);
         });
+    }
+
+    async add_attribute_value_if_not_contained(_attribute_name, _value_dto) {
+        if (_value_dto.attribute_name !== _attribute_name) {
+            let data = await this.#session.read({
+                nodeId: _value_dto[_attribute_name + "Id"],
+            });
+            _value_dto[_attribute_name] = data.value.value;
+        }
     }
 
     call_remove_callback(_value_dto) {
