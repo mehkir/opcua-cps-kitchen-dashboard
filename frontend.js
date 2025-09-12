@@ -87,8 +87,7 @@ function create_robot_info_element(pos) {
 function update_robot_info_element(data) {
     const set_if_exists = (type, attribute_name, pos, new_value) => {
         const el = document.getElementById(`${type}-${attribute_name}-${pos}`);
-        if (!el) return;
-        if (new_value !== undefined && new_value !== null && new_value !== '') {
+        if (el && new_value !== undefined && new_value !== null && new_value !== '') {
             if (attribute_name === Robot.OVERALL_TIME) {
                 gauge_objects[pos].refresh(Number(new_value));
                 return;
@@ -110,21 +109,42 @@ function update_conveyor_info_element(data) {
 }
 
 function update_kitchen_info_element(data) {
+    const set_remote_robot_attribute_if_exists = (type, attribute_name, pos, new_value) => {
+        const el = document.getElementById(`${type}-${attribute_name}-${pos}`);
+        if (el && new_value !== undefined && new_value !== null && new_value !== '') {
+            if (attribute_name === Kitchen.CONNECTIVITY) {
+                el.style.color = (new_value === true) ? "green" : "red";
+                el.textContent = new_value === true ? "Online" : "Offline";
+            } else {
+                el.textContent = new_value.toString();
+            }
+        }
+    };
+    const set_remote_attributes_if_exists = (type, attribute_name, new_value) => {
+        const el = document.getElementById(`${type}-${attribute_name}`);
+        if (el && new_value !== undefined && new_value !== null && new_value !== '') {
+            if (attribute_name === Kitchen.CONNECTIVITY) {
+                el.style.color = (new_value === true) ? "green" : "red";
+                el.textContent = new_value === true ? "Online" : "Offline";
+            } else {
+                el.textContent = new_value.toString();
+            }
+        }
+    };
     switch (data.type) {
         case Controller.REMOTE_TYPE:
+            set_remote_attributes_if_exists(data.type, data.attribute_name, data.value);
             break;
         case Conveyor.REMOTE_TYPE:
+            set_remote_attributes_if_exists(data.type, data.attribute_name, data.value);
             break;
         case Robot.REMOTE_TYPE:
+            set_remote_robot_attribute_if_exists(Robot.TYPE, data.attribute_name, data.position, data.value);
             break;
         case Kitchen.TYPE:
             break;
         default:
             break;
-    }
-    const el = document.getElementById(`${Kitchen.TYPE}-${data.attribute_name}-0`);
-    if (el && data.value !== undefined && data.value !== null && data.value !== '') {
-        el.textContent = data.value.toString();
     }
 }
 
