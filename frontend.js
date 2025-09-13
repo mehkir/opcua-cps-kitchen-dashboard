@@ -106,6 +106,8 @@ function update_conveyor_info_element(data) {
         }
     };
     set_if_exists(data.type, Conveyor.PLATE_ID, data[Conveyor.PLATE_POSITION], data[Conveyor.PLATE_ID]);
+    set_if_exists(data.type, Conveyor.PLATE_RECIPE_ID, data[Conveyor.PLATE_POSITION], data[Conveyor.PLATE_RECIPE_ID]);
+    set_if_exists(data.type, Conveyor.PLATE_OCCUPIED, data[Conveyor.PLATE_POSITION], data[Conveyor.PLATE_OCCUPIED]);
 }
 
 function update_kitchen_info_element(data) {
