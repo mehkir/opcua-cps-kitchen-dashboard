@@ -100,7 +100,7 @@ function update_robot_info_element(data) {
 
 function update_conveyor_info_element(data) {
     const set_if_exists = (type, attribute_name, position, value) => {
-        const el = document.getElementById(`${type}-${attribute_name}-${position}}`);
+        const el = document.getElementById(`${type}-${attribute_name}-${position}`);
         if (el && value !== undefined && value !== null && value !== '') {
             el.textContent = value.toString();
         }
