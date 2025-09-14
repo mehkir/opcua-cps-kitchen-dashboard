@@ -183,13 +183,13 @@ function handle_received_data(value) {
         update_kitchen_info_element(value);
     }
     if (value.type === Controller.REMOTE_TYPE) {
-        // Currently no UI elements for controller attributes
+        update_kitchen_info_element(value);
     }
     if (value.type === Conveyor.REMOTE_TYPE) {
-        // Currently no UI elements for remote conveyor attributes
+        update_kitchen_info_element(value);
     }
     if (value.type === Robot.REMOTE_TYPE) {
-        // Currently no UI elements for remote robot attributes
+        update_kitchen_info_element(value);
     }
 }
 
