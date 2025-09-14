@@ -186,6 +186,8 @@ async function subscribe_kitchen (_kitchen) {
     }
     _kitchen.remote_robots.forEach(async (remote_robot, position) => {
         for (const [browse_name, attribute_id] of Object.entries(remote_robot)) {
+            if (browse_name === 'position')
+                continue;
             const remote_robot_monitor = {
                 type: Robot.REMOTE_TYPE,
                 position: position,
