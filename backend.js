@@ -127,7 +127,8 @@ async function browse_kitchen_instance (_server, _instance_id) {
 }
 
 async function subscribe_conveyor (_conveyor) {
-    conveyor_subscriber = new opcua_subscriber(ws_server, _conveyor.url, remove_callbacks);
+    const remove_context = { type: Conveyor.TYPE };
+    conveyor_subscriber = new opcua_subscriber(ws_server, _conveyor.url, remove_callbacks, remove_context);
     await conveyor_subscriber.create_session();
     await conveyor_subscriber.create_subscription();
     _conveyor.plates.forEach(async (plate, id) => {
@@ -149,7 +150,8 @@ async function subscribe_conveyor (_conveyor) {
 }
 
 async function subscribe_robot (_robot) {
-    const opcua_robot_sub = new opcua_subscriber(ws_server, _robot.url, remove_callbacks);
+    const remove_context = { type: Robot.TYPE, position: _robot.position };
+    const opcua_robot_sub = new opcua_subscriber(ws_server, _robot.url, remove_callbacks, remove_context);
     await opcua_robot_sub.create_session();
     await opcua_robot_sub.create_subscription();
     for (const [browse_name, attribute_id] of Object.entries(_robot.attributes)) {
@@ -165,7 +167,8 @@ async function subscribe_robot (_robot) {
 }
 
 async function subscribe_kitchen (_kitchen) {
-    kitchen_subscriber = new opcua_subscriber(ws_server, _kitchen.url, remove_callbacks);
+    const remove_context = { type: Kitchen.TYPE };
+    kitchen_subscriber = new opcua_subscriber(ws_server, _kitchen.url, remove_callbacks, remove_context);
     await kitchen_subscriber.create_session();
     await kitchen_subscriber.create_subscription();
     for (const [browse_name, attribute_id] of Object.entries(_kitchen.remote_controller_attributes)) {

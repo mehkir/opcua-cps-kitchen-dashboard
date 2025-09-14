@@ -17,11 +17,14 @@ class opcua_subscriber {
     #session;
     #subscription;
     #remove_callback_called;
-    constructor(_wss, _endpoint_url, _remove_callbacks) {
+    #remove_context;
+
+    constructor(_wss, _endpoint_url, _remove_callbacks, _remove_context) {
         this.#wss = _wss;
         this.#endpoint_url = _endpoint_url;
         this.#remove_callbacks = _remove_callbacks;
         this.#remove_callback_called = false;
+        this.#remove_context = _remove_context;
     }
 
     async create_session() {
@@ -55,6 +58,19 @@ class opcua_subscriber {
                 console.log("📡 Subscription started (ID:", this.#subscription.subscriptionId, ")")
             );
             this.#subscription.on("terminated", () => console.log("❌ Subscription terminated"));
+
+            this.#subscription.on("error", (err) => {
+                console.error("❌ Subscription error:", err)
+                this.call_remove_callback();
+            });
+            this.#client.on("connection_lost", () => {
+                console.error("❌ Connection lost");
+                this.call_remove_callback();
+            });
+            this.#client.on("close", () => {
+                console.error("❌ Connection closed");
+                this.call_remove_callback();
+            });
         } catch (err) {
             console.error("❌ Error:", err);
         }
@@ -102,18 +118,6 @@ class opcua_subscriber {
         } catch (err) {
             console.error("❌ Error:", err);
         }
-        this.#subscription.on("error", (err) => {
-            console.error("❌ Subscription error:", err)
-            this.call_remove_callback(value_dto);
-        });
-        this.#client.on("connection_lost", () => {
-            console.error("❌ Connection lost");
-            this.call_remove_callback(value_dto);
-        });
-        this.#client.on("close", () => {
-            console.error("❌ Connection closed");
-            this.call_remove_callback(value_dto);
-        });
     }
 
     async add_attribute_value_if_not_contained(_attribute_name, _value_dto) {
@@ -125,15 +129,15 @@ class opcua_subscriber {
         }
     }
 
-    call_remove_callback(_value_dto) {
+    call_remove_callback() {
         if (this.#remove_callback_called)
             return;
         this.#remove_callback_called = true;
-        if (_value_dto.type === Conveyor.TYPE) {
-            this.#remove_callbacks.get(_value_dto.type)();
+        if (this.#remove_context.type === Conveyor.TYPE) {
+            this.#remove_callbacks.get(this.#remove_context.type)();
         }
-        if (_value_dto.type === Robot.TYPE) {
-            this.#remove_callbacks.get(_value_dto.type)(_value_dto.position);
+        if (this.#remove_context.type === Robot.TYPE) {
+            this.#remove_callbacks.get(this.#remove_context.type)(this.#remove_context.position);
         }
     }
 
