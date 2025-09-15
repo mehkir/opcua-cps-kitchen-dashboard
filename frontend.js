@@ -123,8 +123,6 @@ function update_kitchen_info_element(data) {
         }
     };
     const set_remote_attributes_if_exists = (type, attribute_name, new_value) => {
-        if (attribute_name === Kitchen.ASSIGNED_ORDERS || attribute_name === Kitchen.DROPPED_ORDERS)
-            attribute_name = `AssignedOrders-DroppedOrders`;
         const el = document.getElementById(`${type}-${attribute_name}`);
         if (el && new_value !== undefined && new_value !== null && new_value !== '') {
             if (attribute_name === Kitchen.CONNECTIVITY) {
@@ -132,6 +130,7 @@ function update_kitchen_info_element(data) {
                 el.textContent = new_value === true ? "Online" : "Offline";
             } else if (attribute_name === Kitchen.ASSIGNED_ORDERS || attribute_name === Kitchen.DROPPED_ORDERS) {
                 /* Special handling for AssignedOrders-DroppedOrders */
+                const el = document.getElementById(`${type}-AssignedOrders-DroppedOrders`);
                 const current_text = el.textContent;
                 const parts = current_text.split('/');
                 let assigned = parts[0] ? parts[0].trim() : '0';
