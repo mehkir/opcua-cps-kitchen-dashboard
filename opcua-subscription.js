@@ -6,7 +6,7 @@ const {
     MonitoringParametersOptions,
     ReadValueIdOptions
 } = require("node-opcua");
-const { Conveyor, Robot } = require("./browsenames");
+const { Conveyor, Robot, Kitchen, Controller } = require("./browsenames");
 
 
 class opcua_subscriber {
