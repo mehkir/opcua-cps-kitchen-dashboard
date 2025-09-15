@@ -123,11 +123,25 @@ function update_kitchen_info_element(data) {
         }
     };
     const set_remote_attributes_if_exists = (type, attribute_name, new_value) => {
+        if (attribute_name === Kitchen.ASSIGNED_ORDERS || attribute_name === Kitchen.DROPPED_ORDERS)
+            attribute_name = `AssignedOrders-DroppedOrders`;
         const el = document.getElementById(`${type}-${attribute_name}`);
         if (el && new_value !== undefined && new_value !== null && new_value !== '') {
             if (attribute_name === Kitchen.CONNECTIVITY) {
                 el.style.color = (new_value === true) ? "green" : "red";
                 el.textContent = new_value === true ? "Online" : "Offline";
+            } else if (attribute_name === Kitchen.ASSIGNED_ORDERS || attribute_name === Kitchen.DROPPED_ORDERS) {
+                /* Special handling for AssignedOrders-DroppedOrders */
+                const current_text = el.textContent;
+                const parts = current_text.split('/');
+                let assigned = parts[0] ? parts[0].trim() : '0';
+                let dropped = parts[1] ? parts[1].trim() : '0';
+                if (attribute_name === Kitchen.ASSIGNED_ORDERS) {
+                    assigned = new_value.toString();
+                } else {
+                    dropped = new_value.toString();
+                }
+                el.textContent = `${assigned}/${dropped}`;
             } else {
                 el.textContent = new_value.toString();
             }
@@ -144,6 +158,7 @@ function update_kitchen_info_element(data) {
             set_remote_robot_attribute_if_exists(Robot.TYPE, data.attribute_name, data.position, data.value);
             break;
         case Kitchen.TYPE:
+            set_remote_attributes_if_exists(data.type, data.attribute_name, data.value);
             break;
         default:
             break;
