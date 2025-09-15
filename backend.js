@@ -78,16 +78,25 @@ async function browse_kitchen_instance (_server, _instance_id) {
         remote_conveyor_attributes: {},
         remote_robots: new Map()
     };
-    const opcua_browser_instance = new opcua_browser();
-    const browse_methods_result = await opcua_browser_instance.browse_methods(_server.discoveryUrl, _instance_id);
     kitchen.instance_id = _instance_id;
+    const opcua_browser_instance = new opcua_browser();
+    /* Browse kitchen methods */
+    const browse_methods_result = await opcua_browser_instance.browse_methods(_server.discoveryUrl, _instance_id);
     for (const method of browse_methods_result.references) {
         console.log(`Kitchen method: ${method.browseName.name} (${method.nodeId.toString()})`);
         kitchen.methods[method.browseName.name] = method.nodeId;
     }
+    /* Browse kitchen attributes */
+    const browse_attributes_result = await opcua_browser_instance.browse_attributes(_server.discoveryUrl, _instance_id);
+    for (const attr of browse_attributes_result.references) {
+        console.log(`Kitchen attribute: ${attr.browseName.name} (${attr.nodeId.toString()})`);
+        kitchen.attributes[attr.browseName.name] = attr.nodeId;
+    }
+    /* Browse kitchen objects (remote controller, remote conveyor, remote robots) */
     const browse_objects_result = await opcua_browser_instance.browse_objects(_server.discoveryUrl, _instance_id, resolveNodeId("HasComponent"));
     for (const obj of browse_objects_result.references) {
         console.log(`Kitchen object: ${obj.browseName.name} (${obj.nodeId.toString()})`);
+        /* Browse remote controller attributes */
         if (obj.typeDefinition.toString() === (await opcua_browser_instance.browse_object_type(_server.discoveryUrl, Controller.REMOTE_TYPE)).toString()) {
             const browse_attributes_result = await opcua_browser_instance.browse_attributes(_server.discoveryUrl, obj.nodeId);
             for (const attr of browse_attributes_result.references) {
@@ -95,6 +104,7 @@ async function browse_kitchen_instance (_server, _instance_id) {
                 kitchen.remote_controller_attributes[attr.browseName.name] = attr.nodeId;
             }
         }
+        /* Browse remote conveyor attributes */
         if (obj.typeDefinition.toString() === (await opcua_browser_instance.browse_object_type(_server.discoveryUrl, Conveyor.REMOTE_TYPE)).toString()) {
             const browse_attributes_result = await opcua_browser_instance.browse_attributes(_server.discoveryUrl, obj.nodeId);
             for (const attr of browse_attributes_result.references) {
@@ -102,6 +112,7 @@ async function browse_kitchen_instance (_server, _instance_id) {
                 kitchen.remote_conveyor_attributes[attr.browseName.name] = attr.nodeId;
             }
         }
+        /* Browse remote robot attributes */
         if (obj.typeDefinition.toString() === (await opcua_browser_instance.browse_object_type(_server.discoveryUrl, Robot.REMOTE_TYPE)).toString()) {
             const remote_robot_attributes = {};
             const browse_attributes_result = await opcua_browser_instance.browse_attributes(_server.discoveryUrl, obj.nodeId);
@@ -113,13 +124,6 @@ async function browse_kitchen_instance (_server, _instance_id) {
                 remote_robot_attributes[attr.browseName.name] = attr.nodeId;
             }
             kitchen.remote_robots.set(remote_robot_attributes.position, remote_robot_attributes);
-        }
-        if (obj.typeDefinition.toString() === (await opcua_browser_instance.browse_object_type(_server.discoveryUrl, Kitchen.TYPE)).toString()) {
-            const browse_attributes_result = await opcua_browser_instance.browse_attributes(_server.discoveryUrl, obj.nodeId);
-            for (const attr of browse_attributes_result.references) {
-                console.log(`Kitchen attribute: ${attr.browseName.name} (${attr.nodeId.toString()})`);
-                kitchen.attributes[attr.browseName.name] = attr.nodeId;
-            }
         }
     }
     kitchen.url = _server.discoveryUrl;
