@@ -139,6 +139,9 @@ class opcua_subscriber {
         if (this.#remove_context.type === Robot.TYPE) {
             this.#remove_callbacks.get(this.#remove_context.type)(this.#remove_context.position);
         }
+        if (this.#remove_context.type === Kitchen.TYPE) {
+            this.#remove_callbacks.get(this.#remove_context.type)();
+        }
     }
 
     async disconnect() {
