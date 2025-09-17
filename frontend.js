@@ -112,6 +112,16 @@ function update_conveyor_info_element(data) {
     set_if_exists(data.type, Conveyor.PLATE_OCCUPIED, data[Conveyor.PLATE_POSITION], data[Conveyor.PLATE_OCCUPIED]);
 }
 
+function update_controller_info_element(data) {
+    const set_if_exists = (type, attribute_name, new_value) => {
+        const el = document.getElementById(`${type}-${attribute_name}`);
+        if (el && new_value !== undefined && new_value !== null && new_value !== '') {
+            el.textContent = new_value.toString();
+        }
+    };
+    set_if_exists(data.type, data.attribute_name, data.value);
+}
+
 function update_kitchen_info_element(data) {
     const set_remote_robot_attribute_if_exists = (type, attribute_name, pos, new_value) => {
         const el = document.getElementById(`${type}-${attribute_name}-${pos}`);
@@ -193,23 +203,30 @@ function create_plate_info_element(pos, label) {
 
 function handle_received_data(value) {
     console.log("Handling received data:", value);
-    if  (value.type === Robot.TYPE) {
-        update_robot_info_element(value);
-    }
-    if (value.type === Conveyor.TYPE) {
-        update_conveyor_info_element(value);
-    }
-    if (value.type === Kitchen.TYPE) {
-        update_kitchen_info_element(value);
-    }
-    if (value.type === Controller.REMOTE_TYPE) {
-        update_kitchen_info_element(value);
-    }
-    if (value.type === Conveyor.REMOTE_TYPE) {
-        update_kitchen_info_element(value);
-    }
-    if (value.type === Robot.REMOTE_TYPE) {
-        update_kitchen_info_element(value);
+    switch (value.type) {
+        case Robot.TYPE:
+            update_robot_info_element(value);
+            break;
+        case Conveyor.TYPE:
+            update_conveyor_info_element(value);
+            break;
+        case Controller.TYPE:
+            update_controller_info_element(value);
+            break;
+        case Kitchen.TYPE:
+            update_kitchen_info_element(value);
+            break;
+        case Controller.REMOTE_TYPE:
+            update_kitchen_info_element(value);
+            break;
+        case Conveyor.REMOTE_TYPE:
+            update_kitchen_info_element(value);
+            break;
+        case Robot.REMOTE_TYPE:
+            update_kitchen_info_element(value);
+            break;
+        default:
+            break;
     }
 }
 
