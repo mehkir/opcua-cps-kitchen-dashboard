@@ -256,7 +256,7 @@ async function place_random_order (_order_count) {
         }
     } catch (err) {
         console.error("Error calling kitchen method:", err);
-        // reset_controller(); TODO: adapt for kitchen and kitchen subscriber
+        remove_kitchen_subscriber();
     } finally {
         if (session) await session.close();
         await client.disconnect();
