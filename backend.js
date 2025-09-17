@@ -72,7 +72,7 @@ async function browse_controller_instance (_server, _instance_id) {
     const browse_attributes_result = await opcua_browser_instance.browse_attributes(_server.discoveryUrl, _instance_id);
     for (const attr of browse_attributes_result.references) {
         console.log(`Controller attribute: ${attr.browseName.name} (${attr.nodeId.toString()})`);
-        controller[attr.browseName.name] = attr.nodeId;
+        controller.attributes[attr.browseName.name] = attr.nodeId;
     }
     controller.url = _server.discoveryUrl;
     return controller;
