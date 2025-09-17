@@ -40,7 +40,9 @@ const Controller = {
     REMOTE_TYPE : "RemoteControllerType",
     // method nodes
     REGISTER_ROBOT : "RegisterRobot",
-    CHOOSE_NEXT_ROBOT : "ChooseNextRobot"
+    CHOOSE_NEXT_ROBOT : "ChooseNextRobot",
+    // attribute nodes
+    REGISTERED_ROBOTS : "RegisteredRobots"
 };
 
 /* KITCHEN */

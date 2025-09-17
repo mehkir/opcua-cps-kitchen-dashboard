@@ -142,6 +142,9 @@ class opcua_subscriber {
         if (this.#remove_context.type === Kitchen.TYPE) {
             this.#remove_callbacks.get(this.#remove_context.type)();
         }
+        if (this.#remove_context.type === Controller.TYPE) {
+            this.#remove_callbacks.get(this.#remove_context.type)();
+        }
     }
 
     async disconnect() {
@@ -157,7 +160,7 @@ class opcua_subscriber {
             }
             console.log("✅ Disconnected from server");
         } catch (err) {
-            console.error("❌ Error during disconnect:", err);
+            console.error(`❌ Error during disconnect (${this.#remove_context.type}): ${err}`);
         }
     }
 }

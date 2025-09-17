@@ -58,13 +58,21 @@ async function browse_conveyor_instance(_server, _instance_id) {
 }
 
 async function browse_controller_instance (_server, _instance_id) {
-    const controller = { methods : {} };
+    const controller = {
+        methods : {},
+        attributes : {}
+    };
     const opcua_browser_instance = new opcua_browser();
     const browse_methods_result = await opcua_browser_instance.browse_methods(_server.discoveryUrl, _instance_id);
     controller.instance_id = _instance_id;
     for (const method of browse_methods_result.references) {
         console.log(`Controller method: ${method.browseName.name} (${method.nodeId.toString()})`);
         controller.methods[method.browseName.name] = method.nodeId;
+    }
+    const browse_attributes_result = await opcua_browser_instance.browse_attributes(_server.discoveryUrl, _instance_id);
+    for (const attr of browse_attributes_result.references) {
+        console.log(`Controller attribute: ${attr.browseName.name} (${attr.nodeId.toString()})`);
+        controller[attr.browseName.name] = attr.nodeId;
     }
     controller.url = _server.discoveryUrl;
     return controller;
@@ -214,6 +222,21 @@ async function subscribe_kitchen (_kitchen) {
     }
 }
 
+async function subscribe_controller (_controller) {
+    const remove_context = { type: Controller.TYPE };
+    controller_subscriber = new opcua_subscriber(ws_server, _controller.url, remove_callbacks, remove_context);
+    await controller_subscriber.create_session();
+    await controller_subscriber.create_subscription();
+    for (const [browse_name, attribute_id] of Object.entries(_controller.attributes)) {
+        const controller_monitor = {
+            type: Controller.TYPE,
+            attribute_name: browse_name
+        };
+        console.log(`Subscribing to controller attribute ${browse_name}`);
+        await controller_subscriber.subscribe(attribute_id, controller_monitor);
+    }
+}
+
 async function place_random_order (_order_count) {
     console.log("Placing random order");
     const method_id = kitchen.methods[Kitchen.PLACE_RANDOM_ORDER];
@@ -280,9 +303,10 @@ async function browse_servers () {
                     await subscribe_conveyor(conveyor_server);
                 }
 
-                if (controller === null && (instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Controller.TYPE)) !== NodeId.nullNodeId) {
+                if (controller_subscriber === null && (instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Controller.TYPE)) !== NodeId.nullNodeId) {
                     console.log(`Controller type found on server: ${server.discoveryUrl}`);
-                    controller = await browse_controller_instance(server, instance_id);
+                    const controller_server = await browse_controller_instance(server, instance_id);
+                    await subscribe_controller(controller_server);
                 }
 
                 if (kitchen_subscriber === null && (instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Kitchen.TYPE)) !== NodeId.nullNodeId) {
@@ -297,7 +321,7 @@ async function browse_servers () {
 }
 
 function is_run_browsing() {
-    return controller === null || robot_subscribers.size < robot_count || conveyor_subscriber === null || kitchen_subscriber === null;
+    return controller_subscriber === null || robot_subscribers.size < robot_count || conveyor_subscriber === null || kitchen_subscriber === null;
 }
 
 function remove_robot_subscriber(_position) {
@@ -326,9 +350,10 @@ function remove_kitchen_subscriber() {
     browse_servers();
 }
 
-function reset_controller() {
-    if (controller) {
-        controller = null;
+function remove_controller_subscriber() {
+    if (controller_subscriber) {
+        controller_subscriber.disconnect().catch(err => console.error("Error during controller disconnect:", err));
+        controller_subscriber = null;
     }
     browse_servers();
 }
@@ -347,10 +372,11 @@ const remove_callbacks = new Map();
 remove_callbacks.set(Robot.TYPE, remove_robot_subscriber);
 remove_callbacks.set(Conveyor.TYPE, remove_conveyor_subscriber);
 remove_callbacks.set(Kitchen.TYPE, remove_kitchen_subscriber);
+remove_callbacks.set(Controller.TYPE, remove_controller_subscriber);
 
 let shutting_down = false;
 let interval_id = null;
-let controller = null;
+let controller_subscriber = null;
 const robot_subscribers = new Map();
 let conveyor_subscriber = null;
 let kitchen = null;
@@ -370,6 +396,8 @@ process.on('SIGINT', async () => {
         await conveyor_subscriber.disconnect().catch(err => console.error("Error during conveyor disconnect:", err));
     if (kitchen_subscriber)
         await kitchen_subscriber.disconnect().catch(err => console.error("Error during kitchen disconnect:", err));
+    if (controller_subscriber)
+        await controller_subscriber.disconnect().catch(err => console.error("Error during controller disconnect:", err));
     ws_server.close(() => {
         console.log('WebSocket server closed.');
         process.exit(0);
