@@ -21,7 +21,9 @@ async function read_attribute_value(_server_url, _node_id) {
 }
 
 async function browse_robot_instance(_server, _instance_id) {
-    const robot_server = { attributes : {} };
+    const robot_server = {
+        attributes : {}
+    };
     const opcua_browser_instance = new opcua_browser();
     const browse_attributes_result = await opcua_browser_instance.browse_attributes(_server.discoveryUrl, _instance_id);
     for (const attr of browse_attributes_result.references) {
@@ -36,7 +38,10 @@ async function browse_robot_instance(_server, _instance_id) {
 }
 
 async function browse_conveyor_instance(_server, _instance_id) {
-    const conveyor = { plates: new Map() };
+    const conveyor = {
+        plates: new Map(),
+        attributes: {}
+    };
     const opcua_browser_instance = new opcua_browser();
     const browse_objects_result = await opcua_browser_instance.browse_objects(_server.discoveryUrl, _instance_id, resolveNodeId("HasComponent"));
     for (const obj of browse_objects_result.references) {
@@ -52,6 +57,11 @@ async function browse_conveyor_instance(_server, _instance_id) {
             plate_attributes[attr.browseName.name] = attr.nodeId;
         }
         conveyor.plates.set(plate_attributes[Conveyor.PLATE_ID], plate_attributes);
+    }
+    const browse_attributes_result = await opcua_browser_instance.browse_attributes(_server.discoveryUrl, _instance_id);
+    for (const attr of browse_attributes_result.references) {
+        console.log(`Conveyor attribute: ${attr.browseName.name} (${attr.nodeId.toString()})`);
+        conveyor.attributes[attr.browseName.name] = attr.nodeId;
     }
     conveyor.url = _server.discoveryUrl;
     return conveyor;
@@ -148,7 +158,7 @@ async function subscribe_conveyor (_conveyor) {
             if (browse_name === Conveyor.PLATE_ID)
                 continue;
             const plate_monitor = {
-                type: Conveyor.TYPE,
+                type: Conveyor.PLATE_TYPE,
                 [Conveyor.PLATE_ID]: id,
                 [Conveyor.PLATE_POSITION + "Id"]: plate[Conveyor.PLATE_POSITION],
                 [Conveyor.PLATE_RECIPE_ID + "Id"]: plate[Conveyor.PLATE_RECIPE_ID],
@@ -159,6 +169,14 @@ async function subscribe_conveyor (_conveyor) {
             await conveyor_subscriber.subscribe(attribute_id, plate_monitor);
         }
     });
+    for (const [browse_name, attribute_id] of Object.entries(_conveyor.attributes)) {
+        const conveyor_monitor = {
+            type: Conveyor.TYPE,
+            attribute_name: browse_name
+        };
+        console.log(`Subscribing to conveyor attribute ${browse_name}`);
+        await conveyor_subscriber.subscribe(attribute_id, conveyor_monitor);
+    }
 }
 
 async function subscribe_robot (_robot) {

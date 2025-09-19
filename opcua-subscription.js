@@ -95,7 +95,7 @@ class opcua_subscriber {
             monitoredItem.on("changed", async (data_value) => {
                 let value = data_value.value.value;
                 console.log(`🔄 Attribute ${value_dto.attribute_name} changed:`, value);
-                if (value_dto.type === Conveyor.TYPE) {
+                if (value_dto.type === Conveyor.PLATE_TYPE) {
                     // Read plate position
                     await this.add_attribute_value_if_not_contained(Conveyor.PLATE_POSITION, value_dto);
                     // Read plate recipe

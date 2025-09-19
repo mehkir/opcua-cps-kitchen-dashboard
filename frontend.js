@@ -30,7 +30,10 @@ const Conveyor = {
     PLATE_RECIPE_ID : "RecipeId",
     PLATE_OCCUPIED : "Occupied",
     // method nodes
-    FINISHED_ORDER_NOTIFICATION : "FinishedOrderNotification"
+    FINISHED_ORDER_NOTIFICATION : "FinishedOrderNotification",
+    // attribute nodes
+    TOTAL_PLATES : "TotalPlates",
+    OCCUPIED_PLATES : "OccupiedPlates"
 };
 
 /* CONTROLLER */
@@ -100,16 +103,49 @@ function update_robot_info_element(data) {
     set_if_exists(data.type, data.attribute_name, data.position, data.value);
 }
 
+// Keep latest conveyor state to handle out-of-order updates
+const conveyor_state = { total_plates: 0, occupied_plates: 0 };
 function update_conveyor_info_element(data) {
-    const set_if_exists = (type, attribute_name, position, value) => {
+    const set_plate_if_exists = (type, attribute_name, position, value) => {
         const el = document.getElementById(`${type}-${attribute_name}-${position}`);
         if (el && value !== undefined && value !== null && value !== '') {
             el.textContent = value.toString();
         }
     };
-    set_if_exists(data.type, Conveyor.PLATE_ID, data[Conveyor.PLATE_POSITION], data[Conveyor.PLATE_ID]);
-    set_if_exists(data.type, Conveyor.PLATE_RECIPE_ID, data[Conveyor.PLATE_POSITION], data[Conveyor.PLATE_RECIPE_ID]);
-    set_if_exists(data.type, Conveyor.PLATE_OCCUPIED, data[Conveyor.PLATE_POSITION], data[Conveyor.PLATE_OCCUPIED]);
+
+    const set_if_exists = (type, attribute_name, new_value) => {
+        let el = null;
+        if (attribute_name === Conveyor.OCCUPIED_PLATES) {
+            el = document.getElementById(`${type}-FreeOccupied`);
+        } else {
+            el = document.getElementById(`${type}-${attribute_name}`);
+        }
+        if (el && new_value !== undefined && new_value !== null && new_value !== '') {
+            if (attribute_name === Conveyor.TOTAL_PLATES) {
+                conveyor_state.total_plates = new_value;
+                el.textContent = conveyor_state.total_plates.toString();
+            } else if (attribute_name === Conveyor.OCCUPIED_PLATES) {
+                conveyor_state.occupied_plates = new_value;
+            }
+            if (attribute_name === Conveyor.OCCUPIED_PLATES || attribute_name === Conveyor.TOTAL_PLATES) {
+                el = document.getElementById(`${type}-FreeOccupied`);
+                if (!el)
+                    return;
+                const free = conveyor_state.total_plates > 0 ? conveyor_state.total_plates - conveyor_state.occupied_plates : 0;
+                el.textContent = `${free}/${conveyor_state.occupied_plates}`;
+            } else {
+                el.textContent = new_value.toString();
+            }
+        }
+    }
+    if (data.type === Conveyor.PLATE_TYPE) {
+        set_plate_if_exists(data.type, Conveyor.PLATE_ID, data[Conveyor.PLATE_POSITION], data[Conveyor.PLATE_ID]);
+        set_plate_if_exists(data.type, Conveyor.PLATE_RECIPE_ID, data[Conveyor.PLATE_POSITION], data[Conveyor.PLATE_RECIPE_ID]);
+        set_plate_if_exists(data.type, Conveyor.PLATE_OCCUPIED, data[Conveyor.PLATE_POSITION], data[Conveyor.PLATE_OCCUPIED]);
+    }
+    if (data.type === Conveyor.TYPE) {
+        set_if_exists(data.type, data.attribute_name, data.value);
+    }
 }
 
 function update_controller_info_element(data) {
@@ -193,11 +229,10 @@ function create_plate_info_element(pos, label) {
 
     div.innerHTML = `
         <u>${label}</u><br>
-        ID: <span id="${Conveyor.TYPE}-${Conveyor.PLATE_ID}-${pos}">None</span><br>
-        Recipe ID: <span id="${Conveyor.TYPE}-${Conveyor.PLATE_RECIPE_ID}-${pos}">None</span><br>
-        Occupied: <span id="${Conveyor.TYPE}-${Conveyor.PLATE_OCCUPIED}-${pos}">None</span>
+        ID: <span id="${Conveyor.PLATE_TYPE}-${Conveyor.PLATE_ID}-${pos}">None</span><br>
+        Recipe ID: <span id="${Conveyor.PLATE_TYPE}-${Conveyor.PLATE_RECIPE_ID}-${pos}">None</span><br>
+        Occupied: <span id="${Conveyor.PLATE_TYPE}-${Conveyor.PLATE_OCCUPIED}-${pos}">None</span>
     `;
-
     return div;
 }
 
@@ -208,6 +243,9 @@ function handle_received_data(value) {
             update_robot_info_element(value);
             break;
         case Conveyor.TYPE:
+            update_conveyor_info_element(value);
+            break;
+        case Conveyor.PLATE_TYPE:
             update_conveyor_info_element(value);
             break;
         case Controller.TYPE:

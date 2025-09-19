@@ -30,7 +30,10 @@ const Conveyor = {
     PLATE_RECIPE_ID : "RecipeId",
     PLATE_OCCUPIED : "Occupied",
     // method nodes
-    FINISHED_ORDER_NOTIFICATION : "FinishedOrderNotification"
+    FINISHED_ORDER_NOTIFICATION : "FinishedOrderNotification",
+    // attribute nodes
+    TOTAL_PLATES : "TotalPlates",
+    OCCUPIED_PLATES : "OccupiedPlates"
 };
 
 /* CONTROLLER */
