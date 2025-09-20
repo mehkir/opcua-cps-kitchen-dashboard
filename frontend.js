@@ -335,16 +335,6 @@ document.getElementById('setup_environment').addEventListener('keydown', functio
     }
 });
 
-// document.getElementById('random_order_button').onclick = call_random_order_method;
-// function call_random_order_method() {
-//     dto = {
-//         context: Controller.PLACE_RANDOM_ORDER,
-//         order_count: 1
-//     }
-//     console.log("Placing random order");
-//     ws.send(JSON.stringify(dto));
-// }
-
 document.getElementById('random_order_input').addEventListener('keydown', function(event) {
     if (event.key === 'Enter') {
         const order_count = Number(event.target.value);
