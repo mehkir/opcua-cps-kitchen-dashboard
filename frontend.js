@@ -268,24 +268,94 @@ function handle_received_data(value) {
     }
 }
 
-const ws = new WebSocket("ws://localhost:8080");
+let ws;
 document.addEventListener('DOMContentLoaded', function () {
     // Disable input fields until backend is connected
     const random_order_input = document.getElementById('random_order_input');
     if (random_order_input) random_order_input.disabled = true;
     const setup_environment = document.getElementById('setup_environment');
     if (setup_environment) setup_environment.disabled = true;
+    ws = new WebSocket("ws://localhost:8080");
     ws.onopen = () => {
         console.log("✅ WebSocket connected");
         if (setup_environment) setup_environment.disabled = false;
     };
-
     ws.onmessage = (event) => {
         console.log("📨 Received from server:", event.data);
         const data = JSON.parse(event.data);
         console.log("📨 Parsed data:", data);
         handle_received_data(data.value_dto);
     };
+
+    if (setup_environment) {
+        setup_environment.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                const robot_count = Number(event.target.value);
+                if (Number.isInteger(robot_count) && robot_count > 0) {
+                    console.log('Robot count submitted:', robot_count);
+                    // Clear previous positions
+                    const positions = document.getElementById("positions");
+                    positions.innerHTML = `<div class="grid-container page-content" id="positions_labels"></div>`;
+                    const positions_labels = document.getElementById("positions_labels");
+                    positions_labels.innerHTML = `<div><h2 class="open-sans-myfont">Robot Operation</h2></div>
+                                                <div></div>
+                                                <div><h2 class="open-sans-myfont">Conveyor Load</h2></div>`;
+                    for (let position = 1; position <= robot_count; position++) {
+                        // Create and append robot info element
+                        const robot_conveyor_grid = create_grid_container();
+                        const robot = create_robot_info_element(position);
+                        robot_conveyor_grid.appendChild(robot);
+                        // Create and append gauge info element
+                        const gauge = create_gauge(position);
+                        gauge.style.width = "15em";
+                        // gauge.style.height = "10em";
+                        robot_conveyor_grid.appendChild(gauge);
+                        positions.appendChild(robot_conveyor_grid);
+                        gauge_objects[position] = new JustGage({
+                            id: `${Robot.TYPE}-${Robot.OVERALL_TIME}-${position}`,
+                            value: 0,
+                            min: 0,
+                            max: 100,
+                            label: "Time Utilization"
+                        });
+                        // Create and append plate info element
+                        const plate = create_plate_info_element(position, `Position ${position}`);
+                        robot_conveyor_grid.appendChild(plate);
+                    }
+                    // Create and append output plate info element
+                    const robot_conveyor_grid = create_grid_container();
+                    robot_conveyor_grid.innerHTML =`<div></div><div></div>`;
+                    const plate = create_plate_info_element(0, `OUTPUT`);
+                    robot_conveyor_grid.appendChild(plate);
+                    positions.appendChild(robot_conveyor_grid);
+                } else {
+                    alert('Please enter a positive integer.');
+                }
+                /* Clear input field */
+                event.target.value = '';
+            }
+        });
+    }
+
+    if (random_order_input) {
+        random_order_input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                const order_count = Number(event.target.value);
+                if (Number.isInteger(order_count) && order_count > 0) {
+                    console.log('Order count submitted:', order_count);
+                    dto = {
+                        context: Kitchen.PLACE_RANDOM_ORDER,
+                        order_count: order_count
+                    };
+                    console.log("Placing random order with count:", order_count);
+                    ws.send(JSON.stringify(dto));
+                } else {
+                    alert('Please enter a positive integer.');
+                }
+                event.target.value = '';
+            }
+        });
+    }
 });
 
 window.onbeforeunload = function() {
@@ -293,68 +363,3 @@ window.onbeforeunload = function() {
         ws.send(JSON.stringify({ context: "frontend_closed" }));
     }
 };
-
-document.getElementById('setup_environment').addEventListener('keydown', function(event) {
-    if (event.key === 'Enter') {
-        const robot_count = Number(event.target.value);
-        if (Number.isInteger(robot_count) && robot_count > 0) {
-            console.log('Robot count submitted:', robot_count);
-            // Clear previous positions
-            const positions = document.getElementById("positions");
-            positions.innerHTML = `<div class="grid-container page-content" id="positions_labels"></div>`;
-            const positions_labels = document.getElementById("positions_labels");
-            positions_labels.innerHTML = `<div><h2 class="open-sans-myfont">Robot Operation</h2></div>
-                                          <div></div>
-                                          <div><h2 class="open-sans-myfont">Conveyor Load</h2></div>`;
-            for (let position = 1; position <= robot_count; position++) {
-                // Create and append robot info element
-                const robot_conveyor_grid = create_grid_container();
-                const robot = create_robot_info_element(position);
-                robot_conveyor_grid.appendChild(robot);
-                // Create and append gauge info element
-                const gauge = create_gauge(position);
-                gauge.style.width = "15em";
-                // gauge.style.height = "10em";
-                robot_conveyor_grid.appendChild(gauge);
-                positions.appendChild(robot_conveyor_grid);
-                gauge_objects[position] = new JustGage({
-                    id: `${Robot.TYPE}-${Robot.OVERALL_TIME}-${position}`,
-                    value: 0,
-                    min: 0,
-                    max: 100,
-                    label: "Time Utilization"
-                });
-                // Create and append plate info element
-                const plate = create_plate_info_element(position, `Position ${position}`);
-                robot_conveyor_grid.appendChild(plate);
-            }
-            // Create and append output plate info element
-            const robot_conveyor_grid = create_grid_container();
-            robot_conveyor_grid.innerHTML =`<div></div><div></div>`;
-            const plate = create_plate_info_element(0, `OUTPUT`);
-            robot_conveyor_grid.appendChild(plate);
-            positions.appendChild(robot_conveyor_grid);
-        } else {
-            alert('Please enter a positive integer.');
-        }
-        event.target.value = '';
-    }
-});
-
-document.getElementById('random_order_input').addEventListener('keydown', function(event) {
-    if (event.key === 'Enter') {
-        const order_count = Number(event.target.value);
-        if (Number.isInteger(order_count) && order_count > 0) {
-            console.log('Order count submitted:', order_count);
-            dto = {
-                context: Kitchen.PLACE_RANDOM_ORDER,
-                order_count: order_count
-            };
-            console.log("Placing random order with count:", order_count);
-            ws.send(JSON.stringify(dto));
-        } else {
-            alert('Please enter a positive integer.');
-        }
-        event.target.value = '';
-    }
-});
