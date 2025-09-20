@@ -333,6 +333,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 /* Clear input field */
                 event.target.value = '';
+                /* Send setup_environment message to backend */
+                dto = {
+                    context: "setup_environment",
+                    robot_count: robot_count
+                };
+                console.log("Setting up environment with robot count:", robot_count);
+                ws.send(JSON.stringify(dto));
+                if (setup_environment) setup_environment.disabled = true;
             }
         });
     }
