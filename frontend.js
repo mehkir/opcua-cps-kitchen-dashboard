@@ -270,8 +270,14 @@ function handle_received_data(value) {
 
 const ws = new WebSocket("ws://localhost:8080");
 document.addEventListener('DOMContentLoaded', function () {
+    // Disable input fields until backend is connected
+    const random_order_input = document.getElementById('random_order_input');
+    if (random_order_input) random_order_input.disabled = true;
+    const setup_environment = document.getElementById('setup_environment');
+    if (setup_environment) setup_environment.disabled = true;
     ws.onopen = () => {
         console.log("✅ WebSocket connected");
+        if (setup_environment) setup_environment.disabled = false;
     };
 
     ws.onmessage = (event) => {
