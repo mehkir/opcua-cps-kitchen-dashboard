@@ -18,6 +18,7 @@ class opcua_subscriber {
     #subscription;
     #remove_callback_called;
     #remove_context;
+    #overall_dto;
 
     constructor(_wss, _endpoint_url, _remove_callbacks, _remove_context) {
         this.#wss = _wss;
@@ -25,6 +26,11 @@ class opcua_subscriber {
         this.#remove_callbacks = _remove_callbacks;
         this.#remove_callback_called = false;
         this.#remove_context = _remove_context;
+        this.#overall_dto = {};
+    }
+
+    get overall_dto() {
+        return this.#overall_dto;
     }
 
     async create_session() {
@@ -104,8 +110,22 @@ class opcua_subscriber {
                     await this.add_attribute_value_if_not_contained(Conveyor.PLATE_OCCUPIED, value_dto);
                     // Update the changed conveyor attribute
                     value_dto[value_dto.attribute_name] = value;
+                    this.#overall_dto[value_dto.type][value_dto.id] = value_dto;
                 } else {
                     value_dto.value = value;
+                    if (value_dto.type === Robot.TYPE) {
+                        this.#overall_dto[value_dto.type][value_dto.attribute_name] = value;
+                    }
+                    if (value_dto.type === Conveyor.TYPE
+                        || value_dto.type === Kitchen.TYPE
+                        || value_dto.type === Controller.TYPE
+                        || value_dto.type === Controller.REMOTE_TYPE
+                        || value_dto.type === Conveyor.REMOTE_TYPE) {
+                        this.#overall_dto[value_dto.type][value_dto.attribute_name] = value;
+                    }
+                    if (value_dto.type === Robot.REMOTE_TYPE) {
+                        this.#overall_dto[value_dto.type][value_dto.position][value_dto.attribute_name] = value;
+                    }
                 }
 
                 // Broadcast to all connected clients

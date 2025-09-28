@@ -376,6 +376,97 @@ function remove_controller_subscriber() {
     browse_servers();
 }
 
+function send_overall_dto() {
+    if (controller_subscriber !== null) {
+        const overall_dto = controller_subscriber.overall_dto;
+        for(const [type, attributes] of Object.entries(overall_dto)) {
+            for (const [attribute_name, value] of Object.entries(attributes)) {
+                const value_dto = {
+                    type: type,
+                    attribute_name: attribute_name,
+                    value: value
+                };
+                console.log(`Sending attribute ${attribute_name} for controller`);
+                broadcast_to_all_connected_clients(value_dto);
+            }
+        }
+    }
+    robot_subscribers.forEach(async (robot_subscriber, position) => {
+        const overall_dto = robot_subscriber.overall_dto;
+        for(const [type, attributes] of Object.entries(overall_dto)) {
+            for (const [attribute_name, value] of Object.entries(attributes)) {
+                const value_dto = {
+                    type: type,
+                    position: position,
+                    attribute_name: attribute_name,
+                    value: value
+                };
+                console.log(`Sending attribute ${attribute_name} for robot at position ${position}`);
+                broadcast_to_all_connected_clients(value_dto);
+            }
+        }
+    });
+    if (conveyor_subscriber !== null) {
+        const overall_dto = conveyor_subscriber.overall_dto;
+        for(const [type, attributes] of Object.entries(overall_dto)) {
+            if (type === Conveyor.PLATE_TYPE) {
+                for (const [id, value_dto] of Object.entries(attributes)) {
+                    console.log(`Sending attributes for plate id ${id}`);
+                    broadcast_to_all_connected_clients(value_dto);
+                }
+            }
+            if (type === Conveyor.TYPE) {
+                for (const [attribute_name, value] of Object.entries(attributes)) {
+                    const value_dto = {
+                        type: type,
+                        attribute_name: attribute_name,
+                        value: value
+                    };
+                    console.log(`Sending attribute ${attribute_name} for conveyor`);
+                    broadcast_to_all_connected_clients(value_dto);
+                }
+            }
+        }
+    }
+    if (kitchen_subscriber !== null) {
+        const overall_dto = kitchen_subscriber.overall_dto;
+        for(const [type, attributes] of Object.entries(overall_dto)) {
+            if (type === Robot.REMOTE_TYPE) {
+                for (const [position, robot_attributes] of Object.entries(attributes)) {
+                    for (const [attribute_name, value] of Object.entries(robot_attributes)) {
+                        const value_dto = {
+                            type: type,
+                            position: position,
+                            attribute_name: attribute_name,
+                            value: value
+                        };
+                        console.log(`Sending attribute ${attribute_name} for remote robot at position ${position}`);
+                        broadcast_to_all_connected_clients(value_dto);
+                    }
+                }
+            } else {
+                for (const [attribute_name, value] of Object.entries(attributes)) {
+                    const value_dto = {
+                        type: type,
+                        attribute_name: attribute_name,
+                        value: value
+                    };
+                    console.log(`Sending attribute ${attribute_name} for kitchen`);
+                    broadcast_to_all_connected_clients(value_dto);
+                }
+            }
+        }
+    }
+}
+
+function broadcast_to_all_connected_clients(_value_dto) {
+    ws_server.clients.forEach(function each(client) {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ value_dto: _value_dto }));
+        }
+    });
+}
+
 program.option("-rc, --robot-count <number>", "Number of robots to simulate");
 program.parse(process.argv);
 const options = program.opts();
@@ -425,6 +516,11 @@ process.on('SIGINT', async () => {
 
 // Start WebSocket server
 ws_server.on('connection', function connection(ws_connection) {
+    console.log('✅ WebSocket client connected');
+    send_overall_dto();
+    ws_connection.on('close', function close() {
+        console.log('❌ WebSocket client disconnected');
+    });
     ws_connection.on('message', async function incoming(message) {
         const parsed_message = JSON.parse(message);
         console.log('received: %s', parsed_message);
