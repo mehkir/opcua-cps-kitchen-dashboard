@@ -100,6 +100,12 @@ class opcua_subscriber {
             // Handle data change
             monitoredItem.on("changed", async (data_value) => {
                 let value = data_value.value.value;
+                // Ensure containers exist before any assignment
+                const typeKey = value_dto.type;
+                this.#overall_dto[typeKey] ||= {};
+                if (typeKey === Robot.REMOTE_TYPE && value_dto.position != null) {
+                    this.#overall_dto[typeKey][value_dto.position] ||= {};
+                }
                 console.log(`🔄 Attribute ${value_dto.attribute_name} changed:`, value);
                 if (value_dto.type === Conveyor.PLATE_TYPE) {
                     // Read plate position
