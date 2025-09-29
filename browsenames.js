@@ -15,7 +15,11 @@ const Robot = {
     OVERALL_TIME : "OverallTime",
     CURRENT_TOOL : "CurrentTool",
     LAST_EQUIPPED_TOOL : "LastEquippedTool",
-    CAPABILITIES : "Capabilities"
+    CAPABILITIES : "Capabilities",
+    PROCESSED_STEPS : "ProcessedSteps",
+    PROCESSABLE_STEPS : "ProcessableSteps",
+    OVERALL_PROCESSED_STEPS : "OverallProcessedSteps",
+    OVERALL_PROCESSING_STEPS : "OverallProcessingSteps"
 };
 
 /* CONVEYOR */

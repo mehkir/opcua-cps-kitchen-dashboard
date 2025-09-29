@@ -15,7 +15,11 @@ const Robot = {
     OVERALL_TIME : "OverallTime",
     CURRENT_TOOL : "CurrentTool",
     LAST_EQUIPPED_TOOL : "LastEquippedTool",
-    CAPABILITIES : "Capabilities"
+    CAPABILITIES : "Capabilities",
+    PROCESSED_STEPS : "ProcessedSteps",
+    PROCESSABLE_STEPS : "ProcessableSteps",
+    OVERALL_PROCESSED_STEPS : "OverallProcessedSteps",
+    OVERALL_PROCESSING_STEPS : "OverallProcessingSteps"
 };
 
 /* CONVEYOR */
@@ -83,7 +87,9 @@ function create_robot_info_element(pos) {
     Dish name: <span id="${Robot.TYPE}-${Robot.DISH_NAME}-${pos}">None</span><br>
     Current tool: <span id="${Robot.TYPE}-${Robot.CURRENT_TOOL}-${pos}">None</span><br>
     Action: <span id="${Robot.TYPE}-${Robot.ACTION_NAME}-${pos}">None</span><br>
-    Ingredients: <span id="${Robot.TYPE}-${Robot.INGREDIENTS}-${pos}">None</span>
+    Ingredients: <span id="${Robot.TYPE}-${Robot.INGREDIENTS}-${pos}">None</span><br>
+    Local progress: <span id="${Robot.TYPE}-${Robot.PROCESSED_STEPS}-${pos}">0</span>/<span id="${Robot.TYPE}-${Robot.PROCESSABLE_STEPS}-${pos}">0</span><br>
+    Overall progress: <span id="${Robot.TYPE}-${Robot.OVERALL_PROCESSED_STEPS}-${pos}">0</span>/<span id="${Robot.TYPE}-${Robot.OVERALL_PROCESSING_STEPS}-${pos}">0</span>
   `;
 
   return div;
