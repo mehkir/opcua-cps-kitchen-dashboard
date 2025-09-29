@@ -270,23 +270,37 @@ function handle_received_data(value) {
 
 let ws;
 document.addEventListener('DOMContentLoaded', function () {
-    ws = new WebSocket("ws://localhost:8080");
-    ws.onopen = () => {
-        console.log("✅ WebSocket connected");
-    };
-    ws.onmessage = (event) => {
-        console.log("📨 Received from server:", event.data);
-        const data = JSON.parse(event.data);
-        console.log("📨 Parsed data:", data);
-        handle_received_data(data.value_dto);
-    };
+    const setup_dashboard = document.getElementById('setup_dashboard');
+    const random_order_input = document.getElementById('random_order_input');
+    // Create the connection only when needed
+    function initWebSocket() {
+        if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+            const dto = {
+                context: "broadcast_overall_dto"
+            };
+            ws.send(JSON.stringify(dto));
+            return; // avoid duplicate connections
+        }
+        ws = new WebSocket("ws://localhost:8080");
+        ws.onopen = () => {
+            console.log("✅ WebSocket connected");
+        };
+        ws.onmessage = (event) => {
+            console.log("📨 Received from server:", event.data);
+            const data = JSON.parse(event.data);
+            console.log("📨 Parsed data:", data);
+            handle_received_data(data.value_dto);
+        };
+        ws.onclose = () => console.log("❌ WebSocket closed");
+        ws.onerror = (err) => console.error("WebSocket error:", err);
+    }
 
-    if (setup_environment) {
-        setup_environment.addEventListener('keydown', function(event) {
+    if (setup_dashboard) {
+        setup_dashboard.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
                 const robot_count = Number(event.target.value);
                 if (Number.isInteger(robot_count) && robot_count > 0) {
-                    console.log('Robot count submitted:', robot_count);
+                    console.log('Setup dashboard with robot count:', robot_count);
                     // Clear previous positions
                     const positions = document.getElementById("positions");
                     positions.innerHTML = `<div class="grid-container page-content" id="positions_labels"></div>`;
@@ -322,6 +336,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const plate = create_plate_info_element(0, `OUTPUT`);
                     robot_conveyor_grid.appendChild(plate);
                     positions.appendChild(robot_conveyor_grid);
+                    initWebSocket();
                 } else {
                     alert('Please enter a positive integer.');
                 }
@@ -337,12 +352,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 const order_count = Number(event.target.value);
                 if (Number.isInteger(order_count) && order_count > 0) {
                     console.log('Order count submitted:', order_count);
-                    dto = {
+                    const dto = {
                         context: Kitchen.PLACE_RANDOM_ORDER,
                         order_count: order_count
                     };
                     console.log("Placing random order with count:", order_count);
-                    ws.send(JSON.stringify(dto));
+                    if (!ws || ws.readyState !== WebSocket.OPEN) {
+                        console.warn("WebSocket not open; setup dashboard first...");
+                        alert("Setup dashboard first...");
+                    } else {
+                        ws.send(JSON.stringify(dto));
+                    }
                 } else {
                     alert('Please enter a positive integer.');
                 }
@@ -353,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 window.onbeforeunload = function() {
-    if (ws.readyState === WebSocket.OPEN) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ context: "frontend_closed" }));
     }
 };

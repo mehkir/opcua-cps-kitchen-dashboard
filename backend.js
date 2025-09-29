@@ -527,6 +527,9 @@ ws_server.on('connection', function connection(ws_connection) {
         if (parsed_message.context === Kitchen.PLACE_RANDOM_ORDER) {
             await place_random_order(parsed_message.order_count);
         }
+        if (parsed_message.context === "broadcast_overall_dto") {
+            send_overall_dto();
+        }
         if (parsed_message.context === "frontend_closed") {
             console.log("Frontend closed, cleaning up...");
             ws_connection.close();
