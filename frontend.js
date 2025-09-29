@@ -347,8 +347,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     };
                     console.log("Placing random order with count:", order_count);
                     if (!ws || ws.readyState !== WebSocket.OPEN) {
-                        console.warn("WebSocket not open; setup dashboard first...");
-                        alert("Setup dashboard first...");
+                        console.warn("WebSocket not open; setup dashboard first");
+                        alert("Setup dashboard first");
                     } else {
                         ws.send(JSON.stringify(dto));
                     }
