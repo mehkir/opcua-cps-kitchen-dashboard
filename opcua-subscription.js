@@ -116,7 +116,8 @@ class opcua_subscriber {
                     await this.add_attribute_value_if_not_contained(Conveyor.PLATE_OCCUPIED, value_dto);
                     // Update the changed conveyor attribute
                     value_dto[value_dto.attribute_name] = value;
-                    this.#overall_dto[value_dto.type][value_dto.id] = value_dto;
+                    const plate_id = value_dto[Conveyor.PLATE_ID];
+                    this.#overall_dto[value_dto.type][plate_id] = value_dto;
                 } else {
                     value_dto.value = value;
                     if (value_dto.type === Robot.TYPE) {
