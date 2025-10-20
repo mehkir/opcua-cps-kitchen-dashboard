@@ -6,6 +6,7 @@ const Robot = {
     // method nodes
     RECEIVE_TASK : "ReceiveTask",
     HANDOVER_FINISHED_ORDER : "HandoverFinishedOrder",
+    SWITCH_POSITION : "SwitchPosition",
     // attribute nodes
     POSITION : "Position",
     RECIPE_ID : "RecipeId",
@@ -19,7 +20,8 @@ const Robot = {
     PROCESSED_STEPS : "ProcessedSteps",
     PROCESSABLE_STEPS : "ProcessableSteps",
     OVERALL_PROCESSED_STEPS : "OverallProcessedSteps",
-    OVERALL_PROCESSING_STEPS : "OverallProcessingSteps"
+    OVERALL_PROCESSING_STEPS : "OverallProcessingSteps",
+    AVAILABILITY : "Availability"
 };
 
 /* CONVEYOR */
@@ -58,6 +60,7 @@ const Kitchen = {
     TYPE : "KitchenType",
     // method nodes
     PLACE_RANDOM_ORDER : "PlaceRandomOrder",
+    RECEIVE_COMPLETED_ORDER : "ReceiveCompletedOrder",
     // attribute nodes
     CONNECTIVITY : "Connectivity",
     RECEIVED_ORDERS : "ReceivedOrders",
