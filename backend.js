@@ -1,6 +1,5 @@
 const DISCOVERY_URL = "opc.tcp://localhost:4840";
 const WS_PORT = 8080;
-const ROBOT_STATE_AVAILABLE = 0;
 const my_module = require('./my-addons/my_module.node');
 const { Robot, Conveyor, Controller, Kitchen } = require('./browsenames');
 const { ApplicationType, NodeId, OPCUAClient, resolveNodeId } = require("node-opcua");
@@ -314,7 +313,7 @@ async function browse_servers () {
                     console.log(`Robot type found on server: ${server.discoveryUrl}`);
                     const robot_server = await browse_robot_instance(server, instance_id);
                     const available_state = await read_attribute_value(robot_server.url, robot_server.attributes[Robot.AVAILABILITY]);
-                    if (available_state === ROBOT_STATE_AVAILABLE && !robot_subscribers.has(robot_server.position))
+                    if (available_state && !robot_subscribers.has(robot_server.position))
                         await subscribe_robot(robot_server);
                 }
 
