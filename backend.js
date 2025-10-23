@@ -378,19 +378,19 @@ function remove_controller_subscriber() {
 }
 
 function robot_position_changed(_old_position, _new_position) {
-    if (_old_position === _new_position)
-        return;
-    if (!robot_subscribers.has(_old_position))
-        return;
     const robot_sub_at_old_position = robot_subscribers.get(_old_position);
-    robot_sub_at_old_position.disconnect().catch(err => console.error("Error during robot disconnect at position change:", err));
-    robot_subscribers.delete(_old_position);
-    if (robot_subscribers.has(_new_position)) {
-        const robot_sub_at_new_position = robot_subscribers.get(_new_position);
-        robot_sub_at_new_position.disconnect().catch(err => console.error("Error during robot disconnect at position change:", err));
+    const robot_sub_at_new_position = robot_subscribers.get(_new_position);
+    if ((robot_sub_at_old_position && robot_sub_at_old_position.overall_dto[Robot.TYPE][Robot.POSITION] !== _old_position)
+        || (robot_sub_at_new_position && robot_sub_at_new_position.overall_dto[Robot.TYPE][Robot.POSITION] !== _new_position)) {
+        robot_subscribers.delete(_old_position);
         robot_subscribers.delete(_new_position);
+        if (robot_sub_at_old_position) {
+            robot_subscribers.set(_new_position, robot_sub_at_old_position);
+        }
+        if (robot_sub_at_new_position) {
+            robot_subscribers.set(_old_position, robot_sub_at_new_position);
+        }
     }
-    browse_servers();
 }
 
 function send_overall_dto() {
