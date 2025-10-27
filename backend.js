@@ -387,9 +387,12 @@ function robot_position_changed(_old_position, _new_position) {
         if (robot_sub_at_old_position) {
             robot_subscribers.set(_new_position, robot_sub_at_old_position);
         }
+        send_overall_dto();
         if (robot_sub_at_new_position) {
             robot_subscribers.set(_old_position, robot_sub_at_new_position);
         }
+    } else {
+        send_overall_dto();
     }
 }
 
@@ -408,8 +411,9 @@ function send_overall_dto() {
             }
         }
     }
-    robot_subscribers.forEach(async (robot_subscriber, position) => {
+    robot_subscribers.forEach((robot_subscriber) => {
         const overall_dto = robot_subscriber.overall_dto;
+        const position = overall_dto[Robot.TYPE]?.[Robot.POSITION];
         for(const [type, attributes] of Object.entries(overall_dto)) {
             for (const [attribute_name, value] of Object.entries(attributes)) {
                 const value_dto = {
