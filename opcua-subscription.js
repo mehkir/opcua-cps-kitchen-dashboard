@@ -130,6 +130,12 @@ class opcua_subscriber {
                             if (this.#robot_position_switch_callback) {
                                 this.#robot_position_switch_callback(old_position, value);
                             }
+                        } else {
+                            // ensure Robot events always carry the current position
+                            const currentPos = this.#overall_dto[Robot.TYPE]?.[Robot.POSITION];
+                            if (currentPos !== undefined) {
+                                value_dto.position = currentPos;
+                            }
                         }
                     }
                     if (value_dto.type === Conveyor.TYPE
