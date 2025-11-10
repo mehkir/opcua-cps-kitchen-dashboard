@@ -19,14 +19,16 @@ class opcua_subscriber {
     #remove_callback_called;
     #remove_context;
     #overall_dto;
+    #robot_position_switch_callback;
 
-    constructor(_wss, _endpoint_url, _remove_callbacks, _remove_context) {
+    constructor(_wss, _endpoint_url, _remove_callbacks, _remove_context, _robot_position_switch_callback = null) {
         this.#wss = _wss;
         this.#endpoint_url = _endpoint_url;
         this.#remove_callbacks = _remove_callbacks;
         this.#remove_callback_called = false;
         this.#remove_context = _remove_context;
         this.#overall_dto = {};
+        this.#robot_position_switch_callback = _robot_position_switch_callback;
     }
 
     get overall_dto() {
@@ -122,6 +124,19 @@ class opcua_subscriber {
                     value_dto.value = value;
                     if (value_dto.type === Robot.TYPE) {
                         this.#overall_dto[value_dto.type][value_dto.attribute_name] = value;
+                        if (value_dto.attribute_name === Robot.POSITION) {
+                            const old_position = value_dto.position;
+                            value_dto.position = value;
+                            if (this.#robot_position_switch_callback) {
+                                this.#robot_position_switch_callback(old_position, value);
+                            }
+                        } else {
+                            // ensure Robot events always carry the current position
+                            const currentPos = this.#overall_dto[Robot.TYPE]?.[Robot.POSITION];
+                            if (currentPos !== undefined) {
+                                value_dto.position = currentPos;
+                            }
+                        }
                     }
                     if (value_dto.type === Conveyor.TYPE
                         || value_dto.type === Kitchen.TYPE

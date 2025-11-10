@@ -181,7 +181,7 @@ async function subscribe_conveyor (_conveyor) {
 
 async function subscribe_robot (_robot) {
     const remove_context = { type: Robot.TYPE, position: _robot.position };
-    const opcua_robot_sub = new opcua_subscriber(ws_server, _robot.url, remove_callbacks, remove_context);
+    const opcua_robot_sub = new opcua_subscriber(ws_server, _robot.url, remove_callbacks, remove_context, robot_position_changed);
     await opcua_robot_sub.create_session();
     await opcua_robot_sub.create_subscription();
     for (const [browse_name, attribute_id] of Object.entries(_robot.attributes)) {
@@ -292,6 +292,7 @@ async function browse_servers () {
             interval_id = null;
             console.log('Browsing stopped')
         } else {
+            console.log("Browsing ...");
             let servers;
             try {
                 servers = my_module.findServers(DISCOVERY_URL);   
@@ -311,7 +312,8 @@ async function browse_servers () {
                 if (robot_subscribers.size < robot_count && (instance_id = await opcua_browser_instance.browse_instance(server.discoveryUrl, Robot.TYPE)) !== NodeId.nullNodeId) {
                     console.log(`Robot type found on server: ${server.discoveryUrl}`);
                     const robot_server = await browse_robot_instance(server, instance_id);
-                    if (!robot_subscribers.has(robot_server.position))
+                    const available_state = await read_attribute_value(robot_server.url, robot_server.attributes[Robot.AVAILABILITY]);
+                    if (available_state && !robot_subscribers.has(robot_server.position))
                         await subscribe_robot(robot_server);
                 }
 
@@ -334,7 +336,6 @@ async function browse_servers () {
                 }
             }
         }
-        console.log("Browsing ...");
     }, 1000);
 }
 
@@ -376,6 +377,23 @@ function remove_controller_subscriber() {
     browse_servers();
 }
 
+function robot_position_changed(_old_position, _new_position) {
+    const robot_sub_at_old_position = robot_subscribers.get(_old_position);
+    const robot_sub_at_new_position = robot_subscribers.get(_new_position);
+    if (((robot_sub_at_old_position && robot_sub_at_old_position.overall_dto[Robot.TYPE][Robot.POSITION] !== _old_position) || !robot_sub_at_old_position)
+        && ((robot_sub_at_new_position && robot_sub_at_new_position.overall_dto[Robot.TYPE][Robot.POSITION] !== _new_position) || !robot_sub_at_new_position)) {
+        robot_subscribers.delete(_old_position);
+        robot_subscribers.delete(_new_position);
+        if (robot_sub_at_old_position) {
+            robot_subscribers.set(_new_position, robot_sub_at_old_position);
+        }
+        if (robot_sub_at_new_position) {
+            robot_subscribers.set(_old_position, robot_sub_at_new_position);
+        }
+        send_overall_dto();
+    }
+}
+
 function send_overall_dto() {
     if (controller_subscriber !== null) {
         const overall_dto = controller_subscriber.overall_dto;
@@ -391,8 +409,9 @@ function send_overall_dto() {
             }
         }
     }
-    robot_subscribers.forEach(async (robot_subscriber, position) => {
+    robot_subscribers.forEach((robot_subscriber) => {
         const overall_dto = robot_subscriber.overall_dto;
+        const position = overall_dto[Robot.TYPE]?.[Robot.POSITION];
         for(const [type, attributes] of Object.entries(overall_dto)) {
             for (const [attribute_name, value] of Object.entries(attributes)) {
                 const value_dto = {
