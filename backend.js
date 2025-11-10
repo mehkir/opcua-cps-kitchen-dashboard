@@ -380,18 +380,16 @@ function remove_controller_subscriber() {
 function robot_position_changed(_old_position, _new_position) {
     const robot_sub_at_old_position = robot_subscribers.get(_old_position);
     const robot_sub_at_new_position = robot_subscribers.get(_new_position);
-    if ((robot_sub_at_old_position && robot_sub_at_old_position.overall_dto[Robot.TYPE][Robot.POSITION] !== _old_position)
-        || (robot_sub_at_new_position && robot_sub_at_new_position.overall_dto[Robot.TYPE][Robot.POSITION] !== _new_position)) {
+    if (((robot_sub_at_old_position && robot_sub_at_old_position.overall_dto[Robot.TYPE][Robot.POSITION] !== _old_position) || !robot_sub_at_old_position)
+        && ((robot_sub_at_new_position && robot_sub_at_new_position.overall_dto[Robot.TYPE][Robot.POSITION] !== _new_position) || !robot_sub_at_new_position)) {
         robot_subscribers.delete(_old_position);
         robot_subscribers.delete(_new_position);
         if (robot_sub_at_old_position) {
             robot_subscribers.set(_new_position, robot_sub_at_old_position);
         }
-        send_overall_dto();
         if (robot_sub_at_new_position) {
             robot_subscribers.set(_old_position, robot_sub_at_new_position);
         }
-    } else {
         send_overall_dto();
     }
 }
