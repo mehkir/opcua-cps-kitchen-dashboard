@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     positions.innerHTML = `<div class="grid-container page-content" id="positions_labels"></div>`;
                     const positions_labels = document.getElementById("positions_labels");
                     positions_labels.innerHTML = `<div><h2 class="open-sans-myfont">Robot Operation</h2></div>
-                                                <div><h2 class="open-sans-myfont">Robot Time Utilization</h2></div>
+                                                <div style="text-align: center;"><h2 class="open-sans-myfont">Robot Time Utilization</h2></div>
                                                 <div><h2 class="open-sans-myfont">Conveyor Load</h2></div>`;
                     for (let position = 1; position <= robot_count; position++) {
                         // Create and append robot info element
