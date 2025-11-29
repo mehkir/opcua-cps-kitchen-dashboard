@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     positions.innerHTML = `<div class="grid-container page-content" id="positions_labels"></div>`;
                     const positions_labels = document.getElementById("positions_labels");
                     positions_labels.innerHTML = `<div><h2 class="open-sans-myfont">Robot Operation</h2></div>
-                                                <div></div>
+                                                <div><h2 class="open-sans-myfont">Robot Time Utilization</h2></div>
                                                 <div><h2 class="open-sans-myfont">Conveyor Load</h2></div>`;
                     for (let position = 1; position <= robot_count; position++) {
                         // Create and append robot info element
@@ -315,8 +315,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             id: `${Robot.TYPE}-${Robot.OVERALL_TIME}-${position}`,
                             value: 0,
                             min: 0,
-                            max: 100,
-                            label: "Time Utilization"
+                            max: 60000,
+                            label: "ms"
                         });
                         // Create and append plate info element
                         const plate = create_plate_info_element(position, `Position ${position}`);
