@@ -1,5 +1,6 @@
 const DISCOVERY_URL = "opc.tcp://localhost:4840";
 const WS_PORT = 8080;
+const PLACING_RATE_MS = 100;
 const my_module = require('./my-addons/my_module.node');
 const { Robot, Conveyor, Controller, Kitchen } = require('./browsenames');
 const { ApplicationType, NodeId, OPCUAClient, resolveNodeId } = require("node-opcua");
@@ -271,6 +272,7 @@ async function place_random_order (_order_count) {
                 inputArguments: []
             });
             console.log("Method call result:", result);
+            await new Promise(resolve => setTimeout(resolve, PLACING_RATE_MS));
         }
     } catch (err) {
         console.error("Error calling kitchen method:", err);
