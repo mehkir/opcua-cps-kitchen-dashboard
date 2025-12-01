@@ -316,9 +316,14 @@ async function subscribe_controller (_controller) {
 }
 
 function place_random_order(_order_count) {
-    order_count += _order_count;
-    console.log("Placing random order");
-    place_order();
+    console.log(`Placing ${_order_count} random orders`);
+    if (order_count === 0) {
+        order_count += _order_count;
+        place_order();
+    } else {
+        order_count += _order_count;
+    }
+        
 }
 
 async function place_order() {
