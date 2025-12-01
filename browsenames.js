@@ -60,6 +60,7 @@ const Kitchen = {
     TYPE : "KitchenType",
     // method nodes
     PLACE_RANDOM_ORDER : "PlaceRandomOrder",
+    PLACE_ORDER : "PlaceOrder",
     RECEIVE_COMPLETED_ORDER : "ReceiveCompletedOrder",
     // attribute nodes
     CONNECTIVITY : "Connectivity",

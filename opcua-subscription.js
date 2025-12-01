@@ -20,15 +20,21 @@ class opcua_subscriber {
     #remove_context;
     #overall_dto;
     #robot_position_switch_callback;
+    #kitchen_assigned_orders_callback;
+    #kitchen_dropped_orders_callback;
 
-    constructor(_wss, _endpoint_url, _remove_callbacks, _remove_context, _robot_position_switch_callback = null) {
+    constructor(_wss, _endpoint_url, _remove_callbacks, _remove_context, options = {}) {
         this.#wss = _wss;
         this.#endpoint_url = _endpoint_url;
         this.#remove_callbacks = _remove_callbacks;
         this.#remove_callback_called = false;
         this.#remove_context = _remove_context;
         this.#overall_dto = {};
-        this.#robot_position_switch_callback = _robot_position_switch_callback;
+
+        // Optional callbacks
+        this.#robot_position_switch_callback = options.robot_position_switch_callback;
+        this.#kitchen_assigned_orders_callback = options.kitchen_assigned_orders_callback;
+        this.#kitchen_dropped_orders_callback = options.kitchen_dropped_orders_callback;
     }
 
     get overall_dto() {
@@ -147,6 +153,16 @@ class opcua_subscriber {
                     }
                     if (value_dto.type === Robot.REMOTE_TYPE) {
                         this.#overall_dto[value_dto.type][value_dto.position][value_dto.attribute_name] = value;
+                    }
+                    if (value_dto.type === Kitchen.TYPE && value_dto.attribute_name === Kitchen.ASSIGNED_ORDERS) {
+                        if (this.#kitchen_assigned_orders_callback) {
+                            this.#kitchen_assigned_orders_callback(value);
+                        }
+                    }
+                    if (value_dto.type === Kitchen.TYPE && value_dto.attribute_name === Kitchen.DROPPED_ORDERS) {
+                        if (this.#kitchen_dropped_orders_callback) {
+                            this.#kitchen_dropped_orders_callback(value);
+                        }
                     }
                 }
 
