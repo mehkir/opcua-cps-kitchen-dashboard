@@ -323,7 +323,6 @@ function place_random_order(_order_count) {
     } else {
         order_count += _order_count;
     }
-        
 }
 
 async function place_order() {
