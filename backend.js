@@ -608,10 +608,10 @@ process.on('SIGINT', async () => {
         await conveyor_subscriber.disconnect().catch(err => console.error("Error during conveyor disconnect:", err));
     if (kitchen_subscriber)
         await kitchen_subscriber.disconnect().catch(err => console.error("Error during kitchen disconnect:", err));
-    if (kitchen.session){
+    if (kitchen?.session){
         await kitchen.session.close().catch(err => console.error("Error during kitchen session close:", err));
     }
-    if (kitchen.client) {
+    if (kitchen?.client) {
         await kitchen.client.disconnect().catch(err => console.error("Error during kitchen client disconnect:", err));
     }
     if (controller_subscriber)
