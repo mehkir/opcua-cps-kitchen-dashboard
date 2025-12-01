@@ -639,7 +639,7 @@ ws_server.on('connection', function connection(ws_connection) {
         const parsed_message = JSON.parse(message);
         console.log('received: %s', parsed_message);
         if (parsed_message.context === Kitchen.PLACE_RANDOM_ORDER) {
-            await place_random_order(parsed_message.order_count);
+            place_random_order(parsed_message.order_count);
         }
         if (parsed_message.context === "broadcast_overall_dto") {
             send_overall_dto();
