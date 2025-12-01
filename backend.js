@@ -526,6 +526,15 @@ process.on('SIGINT', async () => {
         await kitchen_subscriber.disconnect().catch(err => console.error("Error during kitchen disconnect:", err));
     if (controller_subscriber)
         await controller_subscriber.disconnect().catch(err => console.error("Error during controller disconnect:", err));
+
+    ws_server.clients.forEach(client => {
+        try {
+            client.terminate();
+        } catch (e) {
+            console.error('Error terminating client:', e);
+        }
+    });
+
     ws_server.close(() => {
         console.log('WebSocket server closed.');
         process.exit(0);
