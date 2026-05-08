@@ -1,0 +1,23 @@
+{
+  "name": "cps-kitchen-dashboard",
+  "version": "1.0.0",
+  "description": "",
+  "main": "backend.js",
+  "scripts": {
+    "start": "node backend.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "gitarchserver:/home/git/Repositories/cps-kitchen-dashboard"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "node-opcua": "^2.161.0",
+    "ws": "^8.18.0"
+  }
+}

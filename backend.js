@@ -7,7 +7,7 @@ const { ApplicationType, NodeId, OPCUAClient, resolveNodeId } = require("node-op
 const opcua_browser = require('./opcua-browser.js');
 const opcua_subscriber = require('./opcua-subscription.js');
 const WebSocket = require('ws');
-const program = require("commander");
+const {program} = require("commander");
 
 async function read_attribute_value(_server_url, _node_id) {
     const client = OPCUAClient.create({});
