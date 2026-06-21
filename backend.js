@@ -648,6 +648,7 @@ process.on('SIGINT', async () => {
 ws_server.on('connection', function connection(ws_connection) {
     console.log('✅ WebSocket client connected');
     send_overall_dto();
+    broadcast_to_all_connected_clients({ type: ALL_AGENTS_DISCOVERED_TYPE, value: all_agents_discovered });
     ws_connection.on('close', function close() {
         console.log('❌ WebSocket client disconnected');
     });
