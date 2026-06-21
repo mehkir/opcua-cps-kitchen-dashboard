@@ -566,7 +566,7 @@ function broadcast_to_all_connected_clients(_value_dto) {
     });
 }
 
-program.option("-rc, --robot-count <number>", "Number of robots to simulate");
+program.option("-r, --robot-count <number>", "Number of robots to simulate");
 program.parse(process.argv);
 const options = program.opts();
 const robot_count = Number(options.robotCount);
