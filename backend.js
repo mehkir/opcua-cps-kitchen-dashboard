@@ -7,7 +7,7 @@ const opcua_browser = require('./opcua-browser.js');
 const opcua_subscriber = require('./opcua-subscription.js');
 const WebSocket = require('ws');
 const {program} = require("commander");
-const ALL_AGENTS_DISCOVERED_TYPE = "ALL_AGENTS_DISCOVERED";
+const ALL_AGENTS_DISCOVERED_TYPE = "AllAgentsDiscovered";
 
 async function read_attribute_value(_server_url, _node_id) {
     const client = OPCUAClient.create({});
