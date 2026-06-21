@@ -366,6 +366,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 window.onbeforeunload = function() {
     if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ context: "frontend_closed" }));
+        ws.close();
     }
 };
