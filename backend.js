@@ -1,6 +1,5 @@
 const DISCOVERY_URL = "opc.tcp://localhost:4840";
 const WS_PORT = 8080;
-const PLACING_RATE_MS = 100;
 const my_module = require('./my-addons/my_module.node');
 const { Robot, Conveyor, Controller, Kitchen } = require('./browsenames');
 const { ApplicationType, NodeId, OPCUAClient, resolveNodeId } = require("node-opcua");
@@ -287,7 +286,7 @@ function assigned_orders_callback(value) {
     }
     if (value === initial_assigned_orders) 
         return;
-    backoff_placing_order_ms = PLACING_RATE_MS;
+    backoff_placing_order_ms = placing_rate_ms;
     order_count--;
     place_order();
 }
@@ -567,14 +566,21 @@ function broadcast_to_all_connected_clients(_value_dto) {
 }
 
 program.option("-r, --robot-count <number>", "Number of robots to simulate");
+program.option("-p, --placing-rate <number>", "Rate of placing orders in milliseconds (default: 100)", "100");
 program.parse(process.argv);
 const options = program.opts();
 const robot_count = Number(options.robotCount);
+const placing_rate_ms = Number(options.placingRate);
 if (isNaN(robot_count) || robot_count <= 0) {
-    console.log("A positive number is required for robot Count");
+    console.log("A positive number is required for robot count");
     process.exit(1);
 }
 console.log("Robot Count:", robot_count);
+if (isNaN(placing_rate_ms) || placing_rate_ms <= 0) {
+    console.log("A positive number is required for placing rate");
+    process.exit(1);
+}
+console.log("Placing Rate (ms):", placing_rate_ms);
 
 const remove_callbacks = new Map();
 remove_callbacks.set(Robot.TYPE, remove_robot_subscriber);
@@ -592,7 +598,7 @@ let kitchen_subscriber = null;
 let initial_assigned_orders = 0;
 let initial_dropped_orders = 0;
 let order_count = 0;
-let backoff_placing_order_ms = PLACING_RATE_MS;
+let backoff_placing_order_ms = placing_rate_ms;
 
 const ws_server = new WebSocket.Server({ port: WS_PORT });
 // Cleanup on Ctrl+C
