@@ -7,6 +7,7 @@ const opcua_browser = require('./opcua-browser.js');
 const opcua_subscriber = require('./opcua-subscription.js');
 const WebSocket = require('ws');
 const {program} = require("commander");
+const ALL_AGENTS_DISCOVERED_TYPE = "ALL_AGENTS_DISCOVERED";
 
 async function read_attribute_value(_server_url, _node_id) {
     const client = OPCUAClient.create({});
@@ -367,7 +368,11 @@ async function browse_servers() {
             clearInterval(interval_id);
             interval_id = null;
             console.log('Browsing stopped')
+            all_agents_discovered = true;
+            broadcast_to_all_connected_clients({ type: ALL_AGENTS_DISCOVERED_TYPE, value: all_agents_discovered });
         } else {
+            all_agents_discovered = false;
+            broadcast_to_all_connected_clients({ type: ALL_AGENTS_DISCOVERED_TYPE, value: all_agents_discovered });
             console.log("Browsing ...");
             let servers;
             try {
@@ -590,6 +595,7 @@ remove_callbacks.set(Controller.TYPE, remove_controller_subscriber);
 
 let shutting_down = false;
 let interval_id = null;
+let all_agents_discovered = false;
 let controller_subscriber = null;
 const robot_subscribers = new Map();
 let conveyor_subscriber = null;
