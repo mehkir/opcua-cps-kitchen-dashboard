@@ -619,9 +619,9 @@ process.on('SIGINT', async () => {
 
     ws_server.clients.forEach(client => {
         try {
-            client.terminate();
+            client.close();
         } catch (e) {
-            console.error('Error terminating client:', e);
+            console.error('Error closing client:', e);
         }
     });
 
@@ -647,10 +647,6 @@ ws_server.on('connection', function connection(ws_connection) {
         }
         if (parsed_message.context === "broadcast_overall_dto") {
             send_overall_dto();
-        }
-        if (parsed_message.context === "frontend_closed") {
-            console.log("Frontend closed, cleaning up...");
-            ws_connection.close();
         }
     });
 });
