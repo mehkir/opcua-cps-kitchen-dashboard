@@ -608,40 +608,33 @@ let backoff_placing_order_ms = placing_rate_ms;
 
 const ws_server = new WebSocket.Server({ port: WS_PORT });
 // Cleanup on Ctrl+C
-process.on('SIGINT', async () => {
-    console.log('🛑 Shutting down...');
+async function shutdown() {
+    if (shutting_down) return;
     shutting_down = true;
-    if (interval_id)
-        clearInterval(interval_id);
-    for (const robot_sub of robot_subscribers.values()) {
-        robot_sub.disconnect().catch(err => console.error("Error during robot disconnect:", err));
-    }
-    if (conveyor_subscriber)
-        await conveyor_subscriber.disconnect().catch(err => console.error("Error during conveyor disconnect:", err));
-    if (kitchen_subscriber)
-        await kitchen_subscriber.disconnect().catch(err => console.error("Error during kitchen disconnect:", err));
-    if (kitchen?.session){
-        await kitchen.session.close().catch(err => console.error("Error during kitchen session close:", err));
-    }
-    if (kitchen?.client) {
-        await kitchen.client.disconnect().catch(err => console.error("Error during kitchen client disconnect:", err));
-    }
-    if (controller_subscriber)
-        await controller_subscriber.disconnect().catch(err => console.error("Error during controller disconnect:", err));
 
-    ws_server.clients.forEach(client => {
-        try {
-            client.close();
-        } catch (e) {
-            console.error('Error closing client:', e);
-        }
-    });
+    if (interval_id) clearInterval(interval_id);
 
-    ws_server.close(() => {
-        console.log('WebSocket server closed.');
-        process.exit(0);
-    });
-});
+    await Promise.all(
+        [...robot_subscribers.values()].map(sub =>
+            sub.disconnect().catch(err => console.error("Robot disconnect error:", err))
+        )
+    );
+
+    if (conveyor_subscriber) await conveyor_subscriber.disconnect().catch(console.error);
+    if (kitchen_subscriber) await kitchen_subscriber.disconnect().catch(console.error);
+    if (controller_subscriber) await controller_subscriber.disconnect().catch(console.error);
+
+    if (kitchen?.session) await kitchen.session.close().catch(console.error);
+    if (kitchen?.client) await kitchen.client.disconnect().catch(console.error);
+
+    for (const client of ws_server.clients) client.close();
+
+    await new Promise(resolve => ws_server.close(resolve));
+    process.exit(0);
+}
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
 
 
 // Start WebSocket server
